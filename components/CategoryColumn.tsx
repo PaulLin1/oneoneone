@@ -64,7 +64,7 @@ export function CategoryColumn({
             <>
               <div
                 aria-hidden="true"
-                className={`absolute ${PORTRAIT_BOX} ${accent.bg}`}
+                className={`absolute ${PORTRAIT_BOX} ${accent.bg} [backface-visibility:hidden]`}
                 style={maskStyle(portraitSrc)}
               />
               <div className="absolute inset-x-0 bottom-0 px-5 pb-5 sm:px-6 sm:pb-6">
@@ -107,7 +107,7 @@ export function CategoryColumn({
           {portraitSrc && (
             <div
               aria-hidden="true"
-              className={`pointer-events-none absolute ${PORTRAIT_BOX} bg-white/15`}
+              className={`pointer-events-none absolute ${PORTRAIT_BOX} -scale-x-100 bg-white/15 [backface-visibility:hidden]`}
               style={maskStyle(portraitSrc)}
             />
           )}
