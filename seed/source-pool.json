@@ -1,0 +1,32 @@
+[
+  {
+    "title": "A Modest Proposal",
+    "author_name": "Jonathan Swift",
+    "year": 1729,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/1080/1080-0.txt",
+    "region": "Ireland",
+    "tags": ["satire", "poverty", "politics"]
+  },
+  {
+    "title": "The Interlopers",
+    "author_name": "Saki (H. H. Munro)",
+    "year": 1919,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The_Toys_of_Peace_and_Other_Papers/The_Interlopers",
+    "region": "England",
+    "tags": ["irony", "feud", "nature", "twist ending"]
+  },
+  {
+    "title": "Birches",
+    "author_name": "Robert Frost",
+    "year": 1916,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/Mountain_Interval/Birches",
+    "region": "United States",
+    "tags": ["nature", "imagination", "childhood"]
+  }
+]
