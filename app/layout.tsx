@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader } from "next/font/google";
 import { Masthead } from "@/components/Masthead";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const literarySerif = Newsreader({
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex h-dvh flex-col overflow-hidden bg-paper text-ink font-sans">
         <Masthead />
         {children}
+        <Footer />
       </body>
     </html>
   );

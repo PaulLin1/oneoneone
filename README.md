@@ -80,17 +80,69 @@ happens wherever they already are, via the hashtag.
 
    Open [http://localhost:3000](http://localhost:3000).
 
+## Deploy to Vercel
+
+The app is stateless besides the Neon connection, so deployment is just:
+"point Vercel at the repo, give it `DATABASE_URL`."
+
+1. Push this repo to GitHub (already set up — `origin` points at
+   `github.com/PaulLin1/oneoneone`).
+2. In Vercel: **Add New → Project → Import** the GitHub repo. Framework
+   preset auto-detects as Next.js; build command (`next build`) and output
+   need no changes.
+3. Before the first deploy (or right after — it only affects runtime, not
+   the build, see below), add one environment variable in the Vercel
+   project's **Settings → Environment Variables**:
+   - `DATABASE_URL` — the same Neon pooled-connection string from your
+     `.env.local`. Set it for all three environments (Production, Preview,
+     Development) unless you want previews hitting a separate Neon branch —
+     Neon's branching feature pairs well with Vercel preview deployments if
+     you want that later.
+4. Make sure the target Neon database has actually had the three
+   migrations applied and been seeded (see "Setup" above) — Vercel deploys
+   the app, not the schema; a fresh Neon project needs that done once, by
+   hand, before or after the first deploy.
+5. Deploy. Every push to `main` redeploys Production; every other branch/PR
+   gets its own Preview URL automatically — no extra config.
+
+`next build` itself never touches the database (every DB-reading route is
+server-rendered on demand — see the route table produced by `npm run
+build` — not statically prerendered), so a missing or wrong `DATABASE_URL`
+only ever surfaces as a runtime error on a page load, never a failed build.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push/PR to `main`: `npm run lint`,
+`tsc --noEmit`, then `npm run build`. No secrets required — see the note
+above about the build never touching the database.
+
+`.github/workflows/fetch-candidates.yml` is separate and opt-in: a weekly
+scheduled run (also triggerable by hand from the Actions tab) of
+`scripts/fetch-candidates.ts` to restock the review queue, so there's always
+something in `content_candidates` to run `npm run review` against. It needs
+a `DATABASE_URL` repository secret (**Settings → Secrets and variables →
+Actions**) — set it once and it's fully hands-off from then on. It only
+ever stages rows as `needs_review`; nothing it does reaches `works` or the
+live site without a human running `npm run review -- promote` afterward
+(see "Content pipeline" below).
+
 ## Project layout
 
 - `app/` — pages: `/` (today's three), `/read/[category]` (reading view,
   with an opt-in Shuffle), `/work/[id]` (exploratory reads), `/archive`
   (list of every past day — click one to expand a dropdown of its three),
   `/archive/[day]/[category]` (same reading-flow chrome as `/read`, for an
-  archived day), `/today` (redirects to `/`), `app/api/daily-selection` (GET
-  route serving the day's puzzle), `app/api/randomize` (GET route backing
-  Shuffle — outside the daily selection contract, see "Shuffle" above)
+  archived day), `/today` (redirects to `/`), `/about`, `/privacy` (privacy
+  + terms), `app/api/daily-selection` (GET route serving the day's puzzle),
+  `app/api/randomize` (GET route backing Shuffle — outside the daily
+  selection contract, see "Shuffle" above)
+- `components/Masthead.tsx` / `components/Footer.tsx` — persistent chrome
+  mounted once in `app/layout.tsx`, present on every page. Masthead carries
+  the wordmark + Archive link; Footer is the compact nav row (Archive,
+  About, Contact, Privacy & Terms, copyright) kept deliberately short since
+  it's on screen even during reading.
 - `components/ReadingFlow.tsx` — the shared stepper chrome (back link,
-  clickable progress boxes, reading view, next/done button) used by both
+  clickable progress boxes, reading view) used by both
   `/read/[category]` and `/archive/[day]/[category]`, so a formatting change
   only has to happen in one place to reach both today's flow and every
   archived day.
@@ -109,6 +161,11 @@ happens wherever they already are, via the hashtag.
   and Share can never accidentally read a shuffled pick. That's the only
   client state in the app — selection itself is server-authoritative and
   identical for everyone, and nothing about what's been read is tracked.
+  Also handles Neon's serverless cold start: concurrent mounts (Masthead +
+  a page) dedupe into one in-flight fetch, a 25s timeout distinguishes a
+  slow-but-working wake-up from a genuinely stuck request, the UI surfaces
+  "still waking up" after 4s instead of a bare spinner, and a failed load
+  exposes a manual `retry`.
 - `lib/categoryColor.ts` — the poem/essay/story color mapping shared by
   every component that shows a category (cards, badges, progress dots)
 - `lib/rights.ts` — computes `rights_status` (`public_domain` /

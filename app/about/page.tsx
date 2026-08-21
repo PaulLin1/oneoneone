@@ -1,17 +1,8 @@
-import Link from "next/link";
-import { globalDayNumber } from "@/lib/epoch";
-import { todayIso } from "@/lib/dateMath";
-
 export default function AboutPage() {
-  const currentDay = globalDayNumber(todayIso());
-
   return (
     <main className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto px-6 py-16 sm:px-10 sm:py-20">
       <div className="mb-10">
-        <Link href="/" className="text-sm text-ink-soft transition-colors hover:text-ink">
-          ← No. {currentDay}
-        </Link>
-        <h1 className="mt-4 text-3xl tracking-tight sm:text-4xl">About</h1>
+        <h1 className="text-3xl tracking-tight sm:text-4xl">About</h1>
       </div>
 
       <div className="space-y-10 border-t border-black/15 pt-10 font-serif text-base leading-relaxed">

@@ -14,15 +14,42 @@ function isWorkCategory(value: string): value is WorkCategory {
 
 export default function ReadPage() {
   const params = useParams<{ category: string }>();
-  const { loading, dayNumber, todaySelection, getWork, isRandomized, randomizeCategory, resetRandomized } =
-    useLocalState();
+  const {
+    loading,
+    isSlow,
+    error,
+    retry,
+    dayNumber,
+    todaySelection,
+    getWork,
+    isRandomized,
+    randomizeCategory,
+    resetRandomized,
+  } = useLocalState();
 
   const categoryParam = params.category;
 
   if (loading && !todaySelection) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 sm:px-10">
-        <p className="text-sm text-ink-soft">Loading…</p>
+        <p className="text-sm text-ink-soft">
+          {isSlow ? "Still loading — the database is waking up, hang tight…" : "Loading…"}
+        </p>
+      </main>
+    );
+  }
+
+  if (error && !todaySelection) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
+        <p className="text-sm text-ink-soft">Couldn&apos;t load today&apos;s readings: {error}</p>
+        <button
+          type="button"
+          onClick={retry}
+          className="text-sm text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink-soft"
+        >
+          Try again
+        </button>
       </main>
     );
   }
@@ -42,9 +69,6 @@ export default function ReadPage() {
   const work = getWork(category);
   if (!work) return null;
 
-  const currentIndex = ORDER.indexOf(category);
-  const nextCategory = ORDER[currentIndex + 1];
-
   return (
     <ReadingFlow
       work={work}
@@ -52,8 +76,6 @@ export default function ReadPage() {
       backHref="/"
       backLabel={`No. ${dayNumber !== null ? dayNumber : "···"}`}
       progressHrefs={{ poem: "/read/poem", essay: "/read/essay", story: "/read/story" }}
-      nextHref={nextCategory ? `/read/${nextCategory}` : "/"}
-      nextLabel={nextCategory ? "Next" : "Done"}
       shuffle={{
         isRandomized: isRandomized(category),
         onShuffle: () => randomizeCategory(category),

@@ -34,9 +34,6 @@ export default async function ArchiveReadPage({
   const category = categoryParam;
   const work = selection[category];
 
-  const currentIndex = ORDER.indexOf(category);
-  const nextCategory = ORDER[currentIndex + 1];
-
   return (
     <ReadingFlow
       work={work}
@@ -48,8 +45,6 @@ export default async function ArchiveReadPage({
         essay: `/archive/${day}/essay`,
         story: `/archive/${day}/story`,
       }}
-      nextHref={nextCategory ? `/archive/${day}/${nextCategory}` : "/archive"}
-      nextLabel={nextCategory ? "Next" : "Done"}
     />
   );
 }

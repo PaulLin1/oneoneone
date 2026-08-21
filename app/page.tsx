@@ -6,22 +6,33 @@ import { CategoryColumn } from "@/components/CategoryColumn";
 import { ShareButton } from "@/components/ShareButton";
 
 export default function Home() {
-  const { loading, error, dayNumber, todaySelection } = useLocalState();
+  const { loading, isSlow, error, retry, dayNumber, todaySelection } = useLocalState();
 
   if (loading && !todaySelection) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 sm:px-10">
-        <p className="text-sm text-ink-soft">Loading today&apos;s three…</p>
+        <p className="text-sm text-ink-soft">
+          {isSlow
+            ? "Still loading — the database is waking up, hang tight…"
+            : "Loading today's three…"}
+        </p>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="flex flex-1 items-center justify-center px-6 text-center sm:px-10">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
         <p className="text-sm text-ink-soft">
           Couldn&apos;t load today&apos;s readings: {error}
         </p>
+        <button
+          type="button"
+          onClick={retry}
+          className="text-sm text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink-soft"
+        >
+          Try again
+        </button>
       </main>
     );
   }

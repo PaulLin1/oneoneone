@@ -27,7 +27,7 @@ export function ReadingProgress({
             href={hrefs[category]}
             aria-current={isCurrent ? "step" : undefined}
             aria-label={`Jump to ${CATEGORY_LABEL[category]}`}
-            className={`h-2.5 w-2.5 border border-ink transition-opacity hover:opacity-70 ${isCurrent ? accent.bg : "bg-transparent"}`}
+            className={`h-3 w-3 border border-ink transition-opacity hover:opacity-70 sm:h-3.5 sm:w-3.5 ${isCurrent ? accent.bg : "bg-transparent"}`}
           />
         );
       })}
