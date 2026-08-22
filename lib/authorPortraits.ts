@@ -11,12 +11,39 @@
  * gradient, no sepia, no grain) so wildly different source material — an
  * 1849 daguerreotype, an 1890s studio photo, a 1907 portrait — reads as one
  * consistent graphic mark instead of "an old photo."
+ *
+ * The four originals were hand-processed. The rest came from
+ * `npm run fetch-author-portrait` + `scripts/process-author-portraits.ts`
+ * (auto-crop toward the most "interesting" region + threshold) — a
+ * mechanical pass, not a human eye, so it doesn't bat 1.000: run against
+ * all 26 catalog authors, 8 came out unusable (subject too small against a
+ * blank-margin source photo, or a degraded/halftone scan) and were deleted
+ * rather than shipped looking broken — Dickinson, Chesterton, Thoreau,
+ * Melville, Keats, O. Henry, Whitman, and Shakespeare currently have no
+ * portrait for that reason, not because one wasn't attempted. Re-run
+ * fetch + process for any of them, by hand, whenever someone wants to sit
+ * down and crop a better source image.
  */
 const AUTHORS_WITH_PORTRAIT = new Set<string>([
   "Edgar Allan Poe",
   "Paul Laurence Dunbar",
   "W. E. B. Du Bois",
   "Ambrose Bierce",
+  "Charlotte Perkins Gilman",
+  "Christina Rossetti",
+  "Francis Bacon",
+  "Guy de Maupassant",
+  "Kate Chopin",
+  "Mark Twain",
+  "Percy Bysshe Shelley",
+  "Ralph Waldo Emerson",
+  "Robert Frost",
+  "Robert Louis Stevenson",
+  "Saki (H. H. Munro)",
+  "W. W. Jacobs",
+  "William Blake",
+  "William Butler Yeats",
+  "William Hazlitt",
 ]);
 
 export function authorSlug(name: string): string {
