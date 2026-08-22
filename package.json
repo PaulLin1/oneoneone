@@ -10,7 +10,8 @@
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "fetch-candidates": "tsx --env-file=.env.local scripts/fetch-candidates.ts",
     "load-candidates": "tsx --env-file=.env.local scripts/load-candidates.ts",
-    "review": "tsx --env-file=.env.local scripts/promote-candidate.ts"
+    "review": "tsx --env-file=.env.local scripts/promote-candidate.ts",
+    "fetch-author-portrait": "tsx --env-file=.env.local scripts/fetch-author-portrait.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

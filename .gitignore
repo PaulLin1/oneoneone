@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# raw, unprocessed author images staged by scripts/fetch-author-portrait.ts —
+# never committed; only the hand-processed public/authors/*.png is
+public/authors/_source/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

@@ -50,13 +50,14 @@ happens wherever they already are, via the hashtag.
    cp .env.local.example .env.local
    ```
 
-2. Apply the schema (run migrations in order — `0001`, `0002`, `0003`),
+2. Apply the schema (run migrations in order — `0001` through `0004`),
    either via `psql` or by pasting each file into the Neon SQL editor:
 
    ```bash
    psql "$DATABASE_URL" -f db/migrations/0001_init.sql
    psql "$DATABASE_URL" -f db/migrations/0002_scalable_schema.sql
    psql "$DATABASE_URL" -f db/migrations/0003_curation_and_dedup.sql
+   psql "$DATABASE_URL" -f db/migrations/0004_author_portraits.sql
    ```
 
    `0002` is what actually defines the current schema (normalized authors/
@@ -64,7 +65,8 @@ happens wherever they already are, via the hashtag.
    only exists so `0002` has something to replace; a fresh Neon project can
    run both back to back with no issue. `0003` adds `pg_trgm`-based fuzzy
    dedup, a `rights_status` column (replacing a hardcoded `public_domain =
-   true`), and source-trust tiering — see "Content pipeline" below.
+   true`), and source-trust tiering. `0004` adds `authors.portrait_source_url`
+   — see "Author portraits" below.
 
 3. Seed the content catalog from `seed/works.json`:
 
@@ -172,6 +174,9 @@ live site without a human running `npm run review -- promote` afterward
   `unverified`) from a publication year or author death year; used by the
   fetch/load pipeline so nothing gets marked public domain without the math
   actually clearing the U.S. 96-years-after-publication bar.
+- `lib/authorPortraits.ts` — the hand-maintained set of authors with a
+  processed portrait asset in `public/authors/`, plus `authorSlug()`. See
+  "Author portraits" below.
 - `seed/works.json` — the hand-curated content catalog; see `seed/README.md`
   for curation conventions. Re-import any time with `npm run seed`
   (idempotent — upserts on title+author).
@@ -180,10 +185,13 @@ live site without a human running `npm run review -- promote` afterward
   right work before adding it); the script never discovers sources on its own.
 - `scripts/fetch-candidates.ts` / `load-candidates.ts` / `promote-candidate.ts`
   — the content pipeline described below.
+- `scripts/fetch-author-portrait.ts` — pulls birth/death year + a raw
+  portrait image per author from Wikipedia. See "Author portraits" below.
 - `db/migrations/0002_scalable_schema.sql` — the schema (authors, tags,
   works, content_candidates, works_feed); `0003_curation_and_dedup.sql` adds
-  fuzzy dedup, `rights_status`, and source tiering. See "Content pipeline"
-  below for the design.
+  fuzzy dedup, `rights_status`, and source tiering; `0004_author_portraits.sql`
+  adds `authors.portrait_source_url`. See "Content pipeline" below for the
+  design.
 - `ROADMAP.md` — ideas specced but deliberately not built yet (licensed
   content, a physical-book "companion" mode, diversity-balanced rotation,
   guest curators) — read before re-deriving any of those from scratch.
@@ -275,3 +283,47 @@ Two paths, same destination (`works`, via review):
 - **Fetched**: `npm run fetch-candidates -- <count>` (grow
   `seed/source-pool.json` first) or `npm run load-candidates -- <file>` for
   an agent-fetched batch, then `npm run review` to approve or reject each one.
+
+## Author portraits
+
+Same two-step shape as the text pipeline — fetch stages raw material,
+a human finishes it — but portraits stay off the review queue: nothing
+about an author's `authors` row is reader-facing status (there's no
+`status` column on `authors` at all), so there's no candidate table to
+land in.
+
+1. **Fetch**: `npm run fetch-author-portrait -- "Author Name"`, or
+   `npm run fetch-author-portrait -- --all` to sweep every author currently
+   missing `portrait_source_url`. For each name it:
+   - queries Wikipedia's REST summary API for that author's short
+     `description` (e.g. `"American writer and critic (1809–1849)"`) and
+     parses `birth_year`/`death_year` out of it — the plaintext `extract`
+     field strips parentheticals, so `description` is the reliable field,
+     not `extract`;
+   - downloads the raw lead image to `public/authors/_source/<slug>.<ext>`
+     (gitignored — a working file, never committed, never served);
+   - upserts `birth_year`, `death_year`, and `portrait_source_url` onto the
+     `authors` row, **only where currently null** (`coalesce`) — it never
+     overwrites a hand-corrected value, and it never touches `bio` at all,
+     since that column is `author_note` in the reading view and is
+     explicitly hand-written editorial content (see `seed/README.md`), not
+     something to auto-fill from a scraped extract. The extract still
+     prints to the console as a starting point for whoever writes that bio
+     by hand.
+   - A retry step strips a trailing curator disambiguator (`"Saki (H. H.
+     Munro)"` → `"Saki"`) on a 404, since that's a catalog convention, not
+     a real Wikipedia article title.
+2. **Process by hand**: crop the staged image, convert it to the flat
+   black-and-white treatment described atop `lib/authorPortraits.ts` (no
+   gray gradient, no sepia, no grain — a consistent graphic mark across
+   wildly different source material), and save it as
+   `public/authors/<slug>.png`.
+3. **Wire it up**: add the author's exact name string to
+   `AUTHORS_WITH_PORTRAIT` in `lib/authorPortraits.ts`. That set is the only
+   thing that gates whether a portrait renders — there's no file-existence
+   check, so step 2 has to actually happen first.
+
+Before using any fetched image for real: verify its own license on
+Wikipedia/Commons. An author's *writing* being public domain says nothing
+about whether a particular 20th-century photograph of them is — some
+portraits on Commons are CC-BY-SA or otherwise restricted, not PD.
