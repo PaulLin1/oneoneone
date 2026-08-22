@@ -120,7 +120,9 @@ To add or change a work:
 This file is hand-reviewed; there is no automated pipeline regenerating it, so any
 edits to `works.json` should go through the same review before being seeded.
 
-There is now a separate path for growing the catalog beyond this file — see
-"Content pipeline" in the top-level `README.md`. Works added that way go through a
-`content_candidates` review queue (`npm run review`) rather than straight into
-`works.json`; nothing skips review regardless of how it was discovered.
+There is now a separate, fully automated path for growing the catalog beyond this
+file — see "Automation" and "Content pipeline" in the top-level `README.md`. Works
+added that way go through a `content_candidates` review queue (`npm run review`,
+run on a schedule by a Claude Code agent rather than by hand) rather than straight
+into `works.json`; nothing skips review regardless of how it was discovered or who
+performed it.

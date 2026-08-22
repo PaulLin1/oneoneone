@@ -94,9 +94,12 @@ branch, not a change to the deterministic contract everyone else relies on.
 
 Explicitly decided, not deferred: no schema field, no promote-time
 checklist, no code. Older public-domain texts that reflect period-typical
-attitudes are not excluded or flagged — it's purely the human reviewer's
-judgment at `npm run review -- promote`, same as everything else that
-reaches `works`.
+attitudes are not excluded or flagged — it's purely reviewer judgment at
+`npm run review -- promote`, same as everything else that reaches `works`.
+That reviewer is now `content-pipeline.yml`'s scheduled agent rather than a
+person at a terminal (see "Automation" in `README.md`) — same command, same
+absence of a special-cased checklist, still no code carving out an
+exception for this.
 
 ## Pool-growth bottleneck (a finding, not a plan)
 
@@ -115,4 +118,7 @@ basis alone, not on quality. Two ways around it, neither built:
 2. Lean on `scripts/load-candidates.ts` (the agent-assisted path) for these
    — an agent reading the actual page can extract a transcluded work by
    hand the way the original 30-work seed catalog was built, sidestepping
-   the automation gap entirely for one-off additions.
+   the automation gap entirely. This is no longer just a one-off manual
+   fallback: `content-pipeline.yml`'s scheduled agent does exactly this
+   whenever `seed/source-pool.json` runs dry, as a routine part of its run
+   rather than something a person has to remember to do.

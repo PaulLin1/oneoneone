@@ -112,21 +112,43 @@ server-rendered on demand — see the route table produced by `npm run
 build` — not statically prerendered), so a missing or wrong `DATABASE_URL`
 only ever surfaces as a runtime error on a page load, never a failed build.
 
-## CI
+## Automation
 
-`.github/workflows/ci.yml` runs on every push/PR to `main`: `npm run lint`,
-`tsc --noEmit`, then `npm run build`. No secrets required — see the note
-above about the build never touching the database.
+Two GitHub Actions workflows. Both need a one-time setup step in
+**Settings → Secrets and variables → Actions** — after that, nothing here
+needs a human to run anything.
 
-`.github/workflows/fetch-candidates.yml` is separate and opt-in: a weekly
-scheduled run (also triggerable by hand from the Actions tab) of
-`scripts/fetch-candidates.ts` to restock the review queue, so there's always
-something in `content_candidates` to run `npm run review` against. It needs
-a `DATABASE_URL` repository secret (**Settings → Secrets and variables →
-Actions**) — set it once and it's fully hands-off from then on. It only
-ever stages rows as `needs_review`; nothing it does reaches `works` or the
-live site without a human running `npm run review -- promote` afterward
-(see "Content pipeline" below).
+- **`.github/workflows/ci.yml`** — every push/PR to `main`: `npm run lint`,
+  `tsc --noEmit`, then `npm run build`. No secrets required (the build
+  never touches the database — see the Vercel section above).
+- **`.github/workflows/content-pipeline.yml`** — the actual content and
+  author-portrait pipeline, running unattended on a weekly schedule
+  (Mondays, also triggerable by hand from the Actions tab). This isn't a
+  mechanical script: it runs a real Claude Code agent
+  (`anthropics/claude-code-action`) inside the workflow, doing exactly what
+  a human reviewer would — fetch candidates, read and judge each one
+  against the sourcing/rights/quality rules in this file and
+  `seed/README.md`, promote or reject, then find any author still missing
+  a portrait and run + visually QA that pipeline too. The full prompt is in
+  the workflow file itself. Needs two secrets:
+  - `DATABASE_URL` — same Neon connection string as everywhere else.
+  - `ANTHROPIC_API_KEY` — an Anthropic API key (console.anthropic.com),
+    scoped to whatever spend limit you're comfortable with; each run
+    consumes real API usage.
+
+  **To check on it**: the Actions tab shows each run's log directly, same
+  as `ci.yml`. Nothing it does is silent or hidden — promotions/rejections
+  show up as normal `npm run review` output in the log, and any files it
+  changed (new portraits, `lib/authorPortraits.ts`, `seed/source-pool.json`)
+  land in a normal commit to `main` you can read like any other.
+
+  **To intervene**: nothing about this workflow prevents also running any
+  of the underlying commands (`npm run review`, `npm run
+  fetch-author-portrait`, etc.) by hand against the same database — the
+  agent isn't doing anything a human couldn't do with the same scripts. If
+  a specific promotion or portrait looks wrong, fix or revert it the same
+  way you'd fix any other mistake in the catalog (see "Content pipeline"
+  and "Author portraits" below for the manual commands).
 
 ## Project layout
 
@@ -181,12 +203,19 @@ live site without a human running `npm run review -- promote` afterward
   for curation conventions. Re-import any time with `npm run seed`
   (idempotent — upserts on title+author).
 - `seed/source-pool.json` — the vetted source list `fetch-candidates.ts`
-  samples from. Grow it deliberately (verify a URL actually resolves to the
-  right work before adding it); the script never discovers sources on its own.
+  samples from. Grown deliberately (a URL has to actually resolve to the
+  right work before landing here) — `fetch-candidates.ts` itself never
+  discovers sources on its own; `content-pipeline.yml`'s agent does that
+  research step when the pool runs dry, verifying before adding, same
+  standard as everything else here.
 - `scripts/fetch-candidates.ts` / `load-candidates.ts` / `promote-candidate.ts`
   — the content pipeline described below.
-- `scripts/fetch-author-portrait.ts` — pulls birth/death year + a raw
-  portrait image per author from Wikipedia. See "Author portraits" below.
+- `scripts/fetch-author-portrait.ts` / `process-author-portraits.ts` — fetch
+  + process steps of the author-portrait pipeline. See "Author portraits"
+  below.
+- `.github/workflows/content-pipeline.yml` — runs the content + portrait
+  pipeline unattended on a schedule via a Claude Code agent. See
+  "Automation" above.
 - `db/migrations/0002_scalable_schema.sql` — the schema (authors, tags,
   works, content_candidates, works_feed); `0003_curation_and_dedup.sql` adds
   fuzzy dedup, `rights_status`, and source tiering; `0004_author_portraits.sql`
@@ -260,16 +289,21 @@ source_pool ──▶ content_candidates ──(reviewed, approved)──▶ wor
   promote anything whose `rights_status` isn't `public_domain` unless you
   pass `--force-pd` — a reviewer has to make that call, not the pipeline.
   `npm run review -- reject <id> "reason"` marks it rejected (kept, not
-  deleted — an audit trail of what was considered and why).
+  deleted — an audit trail of what was considered and why). As of
+  `content-pipeline.yml` (see "Automation" above), this review step runs on
+  a schedule via a Claude Code agent instead of a human at a terminal — same
+  commands, same rules, just unattended. The commands themselves don't care
+  who's running them; use them by hand any time you want to intervene.
 - **"Randomize but keep it high quality"**: randomness is scoped to *which*
   pool entries get fetched in a given run (`fetch-candidates.ts` shuffles
   `source-pool.json` before sampling), never to *what's in* the pool or
   *whether* something goes live. The quality gate is the review step, not
-  the fetch step — a script can discover things unsupervised; only a human
-  (or a more careful agent pass) approves them. (Not to be confused with the
-  reader-facing **Shuffle** feature described above — that's a separate,
-  much smaller idea: giving one reader an alternate pick, never touching
-  what's in the catalog or what anyone else sees.)
+  the fetch step — a script can discover things unsupervised; only a
+  reviewer (human, or the scheduled agent standing in for one) approves
+  them. (Not to be confused with the reader-facing **Shuffle** feature
+  described above — that's a separate, much smaller idea: giving one
+  reader an alternate pick, never touching what's in the catalog or what
+  anyone else sees.)
 
 ## Adding content
 
@@ -280,17 +314,23 @@ Two paths, same destination (`works`, via review):
   entirely (`origin = 'curated'`, inserted as `status = 'approved'`
   directly) since it's already been through a full agent-assisted
   verification pass before it reaches the file.
-- **Fetched**: `npm run fetch-candidates -- <count>` (grow
-  `seed/source-pool.json` first) or `npm run load-candidates -- <file>` for
-  an agent-fetched batch, then `npm run review` to approve or reject each one.
+- **Fetched**: happens on its own now — `content-pipeline.yml` fetches,
+  grows `seed/source-pool.json` when it runs dry, and reviews/promotes
+  weekly (see "Automation" above). To do a pass immediately instead of
+  waiting for the schedule, trigger it by hand from the Actions tab
+  (`workflow_dispatch`), or run the same commands locally: `npm run
+  fetch-candidates -- <count>` / `npm run load-candidates -- <file>`, then
+  `npm run review` to approve or reject each one.
 
 ## Author portraits
 
-Same two-step shape as the text pipeline — fetch stages raw material,
-a human finishes it — but portraits stay off the review queue: nothing
-about an author's `authors` row is reader-facing status (there's no
-`status` column on `authors` at all), so there's no candidate table to
-land in.
+Three steps, same as always — fetch raw material, process it into the
+site's style, wire it up — but all three now run automatically as part of
+`content-pipeline.yml` (see "Automation" above) whenever a newly-promoted
+work's author doesn't have one yet. Portraits stay off the `content_candidates`
+review queue regardless of who/what runs this — there's no `status` column
+on `authors` at all, so there's no candidate table to land in; the gate is
+entirely the visual QA step below.
 
 1. **Fetch**: `npm run fetch-author-portrait -- "Author Name"`, or
    `npm run fetch-author-portrait -- --all` to sweep every author currently
@@ -313,15 +353,31 @@ land in.
    - A retry step strips a trailing curator disambiguator (`"Saki (H. H.
      Munro)"` → `"Saki"`) on a 404, since that's a catalog convention, not
      a real Wikipedia article title.
-2. **Process by hand**: crop the staged image, convert it to the flat
-   black-and-white treatment described atop `lib/authorPortraits.ts` (no
-   gray gradient, no sepia, no grain — a consistent graphic mark across
-   wildly different source material), and save it as
-   `public/authors/<slug>.png`.
-3. **Wire it up**: add the author's exact name string to
-   `AUTHORS_WITH_PORTRAIT` in `lib/authorPortraits.ts`. That set is the only
-   thing that gates whether a portrait renders — there's no file-existence
-   check, so step 2 has to actually happen first.
+2. **Process**: `npm run process-author-portraits` turns every
+   staged raw image into the site's flat black-and-white mark — content-box
+   crop (zooms toward the actual subject, not just sharp's non-zooming
+   attention gravity), a blur pass before threshold to suppress halftone/
+   scan-dot noise, then encodes the result as an alpha-channel stencil
+   (solid black RGB, shape lives in transparency) matching how
+   `CategoryColumn`/`ReadingView`'s `mask-image` actually expects it —
+   *not* a plain opaque black/white PNG, which renders as a solid colored
+   square (browsers fall back to inverted luminance masking without an
+   alpha channel). Pass `--force` to reprocess an author who already has an
+   output. This is mechanical and doesn't always work: source photos with a
+   lot of blank margin, heavy scan degradation, or a Wikipedia lead image
+   that isn't actually a headshot (a memorial statue, say) can come out
+   illegible.
+3. **QA + wire it up**: this is the step that used to be "by hand, forever"
+   — actually looking at each `public/authors/<slug>.png` and judging
+   whether it's legible before adding the author's exact name string to
+   `AUTHORS_WITH_PORTRAIT` in `lib/authorPortraits.ts` (the only thing that
+   gates whether a portrait renders — no file-existence check). The
+   scheduled agent does this with the Read tool, same visual judgment a
+   human would apply; a bad result gets its output file deleted rather than
+   wired in and left broken. To do this pass yourself instead of waiting
+   for the schedule: process, then open each new `public/authors/*.png` and
+   look — a good one is a clear, recognizable, tightly-cropped face; add it
+   to the set. A bad one gets deleted.
 
 Before using any fetched image for real: verify its own license on
 Wikipedia/Commons. An author's *writing* being public domain says nothing

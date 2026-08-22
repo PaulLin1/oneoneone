@@ -1,0 +1,110 @@
+name: Content pipeline
+
+# Runs the whole content + author-portrait pipeline unattended: fetch new
+# candidates, review/promote or reject them, fill in any missing author
+# portraits — all the judgment calls a human reviewer would normally make,
+# done by a Claude Code agent instead. See "Automation" in README.md for
+# the full picture (what runs, what secrets it needs, how to check on it).
+on:
+  schedule:
+    - cron: "0 13 * * 1" # Mondays, 13:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: anthropics/claude-code-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: "Bash,Read,Edit,Write,WebFetch,WebSearch"
+          prompt: |
+            You're running the oneoneone content pipeline unattended, on a
+            schedule, standing in for the human reviewer this project's docs
+            describe. Read README.md's "Content pipeline" and "Author
+            portraits" sections and seed/README.md in full before doing
+            anything — they define the sourcing rules, the rights/PD bar,
+            and the quality bar. Follow them exactly; do not relax them
+            because no one's watching. When in doubt about rights or
+            quality, reject/skip rather than force something live.
+
+            1. Fetch: run `npm run fetch-candidates -- 5`.
+
+            2. If that staged nothing new (pool exhausted or everything's
+               already known), grow seed/source-pool.json yourself: use
+               WebSearch/WebFetch to find a handful of well-known,
+               pre-1930-published poems/essays/short stories on Gutenberg,
+               Wikisource, or Standard Ebooks that aren't already in
+               seed/works.json or seed/source-pool.json. Verify each URL
+               actually resolves to the single work itself (not an index or
+               a scanned-page-transclusion Wikisource page — see
+               ROADMAP.md's "Pool-growth bottleneck" note on why those get
+               skipped). Add verified entries to seed/source-pool.json, or
+               if you already have the full verbatim text in hand from
+               fetching it, stage it directly via a batch JSON file and
+               `npm run load-candidates -- <file>` — then delete that batch
+               file once loaded, same as any other scratch file.
+
+            3. Review: `npm run review` lists everything with status
+               needs_review. For each one:
+               - `npm run review -- show <id>` for full detail.
+               - If it came from the mechanical fetch path, it has no
+                 description yet — read the actual text and write one
+                 (1-2 sentences, matching the tone of entries already in
+                 seed/works.json — no clichés, no back-cover copy).
+               - Assign 2-5 lowercase tags and a region if missing.
+               - Judge difficulty (easy/medium/challenging) on vocabulary,
+                 syntax, and density, same as seed/README.md describes.
+               - Compute era from year yourself: ancient <1800,
+                 19th_century 1800-1899, early_20th_century 1900-1929.
+               - Confirm rights_status is genuinely public_domain (the
+                 96-years-since-publication math in lib/rights.ts, not a
+                 guess) before promoting.
+               - Fill gaps with
+                 `npm run review -- edit <id> --description="..." --tags=a,b,c --region="..." --reading-minutes=N`,
+                 then promote with
+                 `npm run review -- promote <id> --era=<era> --difficulty=<difficulty>`.
+               - Reject anything that fails verification, is a near-
+                 duplicate, has garbled/incomplete extracted text, or you
+                 can't actually confirm public-domain status for:
+                 `npm run review -- reject <id> "reason"`.
+
+            4. Author portraits: find any author on an approved work who
+               isn't yet in AUTHORS_WITH_PORTRAIT in lib/authorPortraits.ts.
+               For each: `npm run fetch-author-portrait -- "Name"`, then
+               `npm run process-author-portraits`, then actually
+               look at the resulting public/authors/<slug>.png with the Read
+               tool. Only add the name to AUTHORS_WITH_PORTRAIT if it's
+               genuinely legible (a real recognizable face, not a tiny
+               sliver, not noise-eaten, correct crop) — same bar described
+               in the comment atop lib/authorPortraits.ts. If it's bad,
+               delete the output PNG and leave that author without a
+               portrait rather than shipping something broken-looking.
+
+            5. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
+               `npm run build` must all pass clean.
+
+            6. Commit whatever files changed (lib/authorPortraits.ts,
+               public/authors/*.png, seed/source-pool.json) with a clear
+               message describing what was added/rejected/portrait-added,
+               and push to main. The database writes from promote/reject
+               already happened live when you ran those commands — this
+               commit is just for the files that changed alongside them.
+
+            If a step finds nothing to do (no new candidates, no missing
+            portraits), that's a normal, successful run — just say so and
+            stop; don't force work that isn't there.
