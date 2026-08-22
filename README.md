@@ -35,6 +35,10 @@ No accounts, no comments, no in-app discussion — the site is deliberately
 just the reading + the share hook; if people want to talk about a day, that
 happens wherever they already are, via the hashtag.
 
+This file covers what the app is and how it's built. For how to ship a
+change, roll one back, rotate a secret, or move any piece of this to
+different infrastructure, see `OPERATIONS.md`.
+
 ## Stack
 
 - Next.js (App Router, TypeScript) + Tailwind CSS 4
@@ -82,6 +86,13 @@ happens wherever they already are, via the hashtag.
 
    Open [http://localhost:3000](http://localhost:3000).
 
+5. Before pushing any change, run what CI runs: `npm run lint`, `npx tsc
+   --noEmit`, `npm test`, `npm run build`. `npm test` runs the pure-logic
+   suite in `test/` (day-numbering, the daily-selection algorithm, the
+   public-domain date math, archive-day generation) via Node's built-in
+   test runner — no extra dependency, `tsx --test test/*.test.ts` under
+   the hood.
+
 ## Deploy to Vercel
 
 The app is stateless besides the Neon connection, so deployment is just:
@@ -119,8 +130,12 @@ Two GitHub Actions workflows. Both need a one-time setup step in
 needs a human to run anything.
 
 - **`.github/workflows/ci.yml`** — every push/PR to `main`: `npm run lint`,
-  `tsc --noEmit`, then `npm run build`. No secrets required (the build
-  never touches the database — see the Vercel section above).
+  `tsc --noEmit`, `npm test`, then `npm run build`. No secrets required
+  (the build never touches the database — see the Vercel section above).
+- **Dependabot** (`.github/dependabot.yml`) — weekly PRs for outdated npm
+  and GitHub Actions dependencies, gated by `ci.yml` like any other PR
+  before merging. Next/React/`eslint-config-next` are grouped into one PR
+  since they need to move together.
 - **`.github/workflows/content-pipeline.yml`** — the actual content and
   author-portrait pipeline, running unattended on a weekly schedule
   (Mondays, also triggerable by hand from the Actions tab). This isn't a
@@ -224,6 +239,13 @@ needs a human to run anything.
 - `ROADMAP.md` — ideas specced but deliberately not built yet (licensed
   content, a physical-book "companion" mode, diversity-balanced rotation,
   guest curators) — read before re-deriving any of those from scratch.
+- `OPERATIONS.md` — the runbook: shipping and rolling back changes,
+  database migrations, pausing/undoing the automated pipeline, secrets
+  reference, moving to different infrastructure, troubleshooting.
+- `test/` — pure-logic unit tests (day-numbering, daily-selection,
+  public-domain date math, archive-day generation, author-slug
+  formatting), run via `npm test` (Node's built-in test runner through
+  `tsx`, no added test-framework dependency).
 
 ## Content pipeline
 
