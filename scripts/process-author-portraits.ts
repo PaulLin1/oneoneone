@@ -22,6 +22,61 @@ const CROP_PADDING = 1.35;
 
 type Box = { left: number; top: number; width: number; height: number };
 
+// Below this many connected pixels, an "ink" blob is scan grain/dust that
+// slipped past the blur, not real content — erased back to background.
+const MIN_SPECK_PIXELS = 10;
+
+/**
+ * Erases small isolated "ink" blobs (4-connected flood-fill components
+ * below MIN_SPECK_PIXELS), in place — the stray specks that used to survive
+ * in otherwise-empty background after threshold(). Deliberately one-sided:
+ * only cleans stray ink sitting in the background, never touches small
+ * background-colored gaps *inside* the subject (an eye highlight, a part in
+ * the hair) — those are real detail carved out of the ink, not noise added
+ * to the background, and erasing them would eat the portrait's actual
+ * linework instead of cleaning up around it.
+ */
+function removeSpecks(buf: Buffer, width: number, height: number, bg: 0 | 255): void {
+  const visited = new Uint8Array(buf.length);
+  const stack: number[] = [];
+
+  for (let start = 0; start < buf.length; start++) {
+    if (visited[start] || buf[start] === bg) continue;
+
+    const component: number[] = [];
+    stack.push(start);
+    visited[start] = 1;
+
+    while (stack.length > 0) {
+      const idx = stack.pop()!;
+      component.push(idx);
+      const x = idx % width;
+      const y = (idx - x) / width;
+
+      if (x > 0 && !visited[idx - 1] && buf[idx - 1] !== bg) {
+        visited[idx - 1] = 1;
+        stack.push(idx - 1);
+      }
+      if (x < width - 1 && !visited[idx + 1] && buf[idx + 1] !== bg) {
+        visited[idx + 1] = 1;
+        stack.push(idx + 1);
+      }
+      if (y > 0 && !visited[idx - width] && buf[idx - width] !== bg) {
+        visited[idx - width] = 1;
+        stack.push(idx - width);
+      }
+      if (y < height - 1 && !visited[idx + width] && buf[idx + width] !== bg) {
+        visited[idx + width] = 1;
+        stack.push(idx + width);
+      }
+    }
+
+    if (component.length < MIN_SPECK_PIXELS) {
+      for (const idx of component) buf[idx] = bg;
+    }
+  }
+}
+
 /**
  * Which of {0, 255} is background rather than subject, by simple majority
  * of the whole buffer. Corner-only sampling breaks once a crop has zoomed
@@ -133,6 +188,7 @@ async function processOne(sourcePath: string, destPath: string): Promise<void> {
   const { width, height } = roughInfo;
 
   const roughBg = backgroundValue(roughBinary);
+  removeSpecks(roughBinary, width, height, roughBg);
   const box = contentBox(roughBinary, width, height, roughBg);
   const crop = box ? squareCropFor(box, width, height) : null;
 
@@ -155,6 +211,7 @@ async function processOne(sourcePath: string, destPath: string): Promise<void> {
     .raw()
     .toBuffer({ resolveWithObject: true });
   const finalBg = backgroundValue(finalBinary);
+  removeSpecks(finalBinary, SIZE, SIZE, finalBg);
 
   const alpha = Buffer.alloc(SIZE * SIZE);
   for (let i = 0; i < finalBinary.length; i++) {

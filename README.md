@@ -357,16 +357,20 @@ entirely the visual QA step below.
    staged raw image into the site's flat black-and-white mark — content-box
    crop (zooms toward the actual subject, not just sharp's non-zooming
    attention gravity), a blur pass before threshold to suppress halftone/
-   scan-dot noise, then encodes the result as an alpha-channel stencil
-   (solid black RGB, shape lives in transparency) matching how
-   `CategoryColumn`/`ReadingView`'s `mask-image` actually expects it —
-   *not* a plain opaque black/white PNG, which renders as a solid colored
-   square (browsers fall back to inverted luminance masking without an
-   alpha channel). Pass `--force` to reprocess an author who already has an
-   output. This is mechanical and doesn't always work: source photos with a
-   lot of blank margin, heavy scan degradation, or a Wikipedia lead image
-   that isn't actually a headshot (a memorial statue, say) can come out
-   illegible.
+   scan-dot noise, a connected-component pass that erases small isolated
+   ink specks outside the actual silhouette back to background (stray dots
+   that survive the blur — see the comment atop `lib/authorPortraits.ts`
+   for what this catches and what it doesn't), then encodes the result as
+   an alpha-channel stencil (solid black RGB, shape lives in transparency)
+   matching how `CategoryColumn`/`ReadingView`'s `mask-image` actually
+   expects it — *not* a plain opaque black/white PNG, which renders as a
+   solid colored square (browsers fall back to inverted luminance masking
+   without an alpha channel). Pass `--force` to reprocess an author who
+   already has an output. This is mechanical and doesn't always work:
+   source photos with a lot of blank margin, heavy scan degradation, dense
+   large-area noise the speck filter can't touch, actual background clutter
+   in the source photo, or a Wikipedia lead image that isn't actually a
+   headshot (a memorial statue, say) can come out illegible.
 3. **QA + wire it up**: this is the step that used to be "by hand, forever"
    — actually looking at each `public/authors/<slug>.png` and judging
    whether it's legible before adding the author's exact name string to
