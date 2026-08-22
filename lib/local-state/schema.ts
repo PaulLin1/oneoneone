@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const STORAGE_KEY = "1000days:state";
+// Bumped after the epoch reset (Day 1 = launch day): the cache-hit check in
+// useLocalState only compares calendar date, not day number, so a reader
+// who'd loaded the site before the reset would otherwise keep seeing their
+// stale pre-reset day number forever on unchanged dates. A key bump forces
+// everyone's cache to miss once, cleanly, without needing per-record
+// versioning for what should never happen again after launch.
+export const STORAGE_KEY = "1000days:state:v2";
 
 const WorkCategorySchema = z.enum(["poem", "essay", "story"]);
 
