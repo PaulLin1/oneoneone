@@ -14,15 +14,21 @@
  *
  * The four originals were hand-processed. The rest came from
  * `npm run fetch-author-portrait` + `scripts/process-author-portraits.ts`
- * (auto-crop toward the most "interesting" region + threshold) — a
- * mechanical pass, not a human eye, so it doesn't bat 1.000: run against
- * all 26 catalog authors, 8 came out unusable (subject too small against a
- * blank-margin source photo, or a degraded/halftone scan) and were deleted
- * rather than shipped looking broken — Dickinson, Chesterton, Thoreau,
- * Melville, Keats, O. Henry, Whitman, and Shakespeare currently have no
- * portrait for that reason, not because one wasn't attempted. Re-run
- * fetch + process for any of them, by hand, whenever someone wants to sit
- * down and crop a better source image.
+ * (content-box crop toward the actual subject, not just sharp's
+ * non-zooming attention gravity, then a denoising blur before threshold) —
+ * a mechanical pass, not a human eye, so it doesn't bat 1.000: run against
+ * all 26 catalog authors, 6 came out unusable and were deleted rather than
+ * shipped looking broken — Dickinson (a dark vignette baked into the
+ * original print fooled the crop into framing almost nothing), Chesterton
+ * (clothing dominates the frame past what background-detection can
+ * recover from), Keats (the Wikipedia lead image is a memorial statue, not
+ * a headshot), O. Henry (source too degraded to threshold cleanly), Whitman
+ * (the actual face never registers as a distinct region from the source's
+ * tonal range), and Shakespeare (too little contrast across the canvas for
+ * a bounding box to lock onto) currently have no portrait for that reason,
+ * not because one wasn't attempted. Re-run fetch + process for any of
+ * them, by hand, whenever someone wants to sit down and crop a better
+ * source image.
  */
 const AUTHORS_WITH_PORTRAIT = new Set<string>([
   "Edgar Allan Poe",
@@ -33,6 +39,8 @@ const AUTHORS_WITH_PORTRAIT = new Set<string>([
   "Christina Rossetti",
   "Francis Bacon",
   "Guy de Maupassant",
+  "Henry David Thoreau",
+  "Herman Melville",
   "Kate Chopin",
   "Mark Twain",
   "Percy Bysshe Shelley",
