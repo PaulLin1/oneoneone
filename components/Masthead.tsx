@@ -1,14 +1,20 @@
 import Link from "next/link";
 import { auth, signIn } from "@/lib/auth";
 
-const NAV_LINK = "-my-2 py-2 underline decoration-black/40 underline-offset-4 transition-colors hover:decoration-black";
+// Solid color chips, not underlined text — the same flat-block language
+// already used everywhere else (category badges in CategoryColumn/
+// ReadingView, the yellow CTA buttons): no rounded corners, no underline,
+// bold uppercase on a hard color fill. One accent per link so the nav
+// reads as a row of marks, same idea as the "one/one/one" wordmark itself.
+const CHIP =
+  "-my-2 px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.15em] transition-opacity hover:opacity-70 sm:px-3 sm:text-xs";
 
 /**
  * Async server component — reads the session directly via auth() rather
  * than taking it as a prop, since it's the only thing on the page that
  * needs it. Accounts are entirely opt-in (see README's "Accounts"
  * section): a signed-out visitor sees exactly what this header showed
- * before accounts existed, plus one "Sign in" link.
+ * before accounts existed, plus one "Sign in" chip.
  */
 export async function Masthead() {
   const session = await auth();
@@ -22,18 +28,18 @@ export async function Masthead() {
         <span className="text-pink">one</span>
         <span className="text-purple">one</span>
       </Link>
-      <div className="flex items-center gap-5 text-xs font-semibold uppercase tracking-[0.15em] text-black">
-        <Link href="/archive" className={NAV_LINK}>
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <Link href="/archive" className={`${CHIP} bg-blue text-white`}>
           Archive
         </Link>
-        <Link href="/about" className={NAV_LINK}>
+        <Link href="/about" className={`${CHIP} bg-pink text-white`}>
           About
         </Link>
-        <Link href="/recommend" className={NAV_LINK}>
+        <Link href="/recommend" className={`${CHIP} bg-purple text-white`}>
           Recommend
         </Link>
         {session?.user ? (
-          <Link href="/account" className={NAV_LINK}>
+          <Link href="/account" className={`${CHIP} bg-ink text-yellow`}>
             Account
           </Link>
         ) : (
@@ -43,7 +49,7 @@ export async function Masthead() {
               await signIn("google");
             }}
           >
-            <button type="submit" className={NAV_LINK}>
+            <button type="submit" className={`${CHIP} bg-ink text-yellow`}>
               Sign in
             </button>
           </form>
