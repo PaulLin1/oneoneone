@@ -1,9 +1,14 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 
 const SOURCE_DIR = path.join(process.cwd(), "public", "authors", "_source");
-const OUTPUT_DIR = path.join(process.cwd(), "public", "authors");
+// Staged, not final: nothing under public/authors/ is committed or served
+// directly anymore (see db/migrations/0006_portrait_urls.sql) — this is a
+// local scratch space for a human or agent to glance over the mechanical
+// output before scripts/publish-author-portrait.ts uploads the good ones
+// to R2 and updates authors.portrait_url.
+const OUTPUT_DIR = path.join(process.cwd(), "public", "authors", "_staging");
 const SIZE = 900;
 const THRESHOLD = 128;
 // Sources vary wildly in native resolution (a tight 683x910 crop next to a
@@ -231,6 +236,8 @@ async function main() {
     return;
   }
 
+  mkdirSync(OUTPUT_DIR, { recursive: true });
+
   const force = process.argv.includes("--force");
   const files = readdirSync(SOURCE_DIR).filter((f) => /\.(jpe?g|png)$/i.test(f));
   const processedSlugs: string[] = [];
@@ -256,12 +263,14 @@ async function main() {
 
   if (skipped.length > 0) {
     console.log(
-      `\nSkipped (public/authors/<slug>.png already exists — pass --force to regenerate): ${skipped.join(", ")}`
+      `\nSkipped (already staged — pass --force to regenerate): ${skipped.join(", ")}`
     );
   }
   console.log(
-    `\nProcessed ${processedSlugs.length} portrait(s). This is a mechanical, unreviewed pass — glance over each ` +
-      `in public/authors/ and re-crop/redo by hand if a specific one looks bad before treating it as final. ` +
+    `\nProcessed ${processedSlugs.length} portrait(s) into public/authors/_staging/. This is a mechanical, ` +
+      `unreviewed pass — glance over each one before treating it as final, then run ` +
+      `\`npm run publish-author-portrait -- "Author Name"\` (or --all) to upload the good ones to R2 and update ` +
+      `authors.portrait_url. Delete a bad one from _staging/ rather than publishing it. ` +
       `Slugs: ${processedSlugs.join(", ") || "(none)"}`
   );
 }

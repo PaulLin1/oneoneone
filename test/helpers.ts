@@ -10,6 +10,7 @@ export function makeWork(overrides: Partial<Work> = {}): Work {
     title: `Test Work ${counter}`,
     author: "Test Author",
     author_note: null,
+    author_portrait_url: null,
     year: 1900,
     category: "poem",
     text_content: "Some text.",

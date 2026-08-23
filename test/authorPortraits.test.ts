@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { authorSlug, authorPortraitSrc } from "@/lib/authorPortraits";
+import { authorSlug } from "@/lib/authorPortraits";
 
 test("authorSlug lowercases and hyphenates a plain name", () => {
   assert.equal(authorSlug("Edgar Allan Poe"), "edgar-allan-poe");
@@ -17,15 +17,4 @@ test("authorSlug collapses runs of non-alphanumeric characters into one hyphen",
 
 test("authorSlug has no leading or trailing hyphens", () => {
   assert.equal(authorSlug("(Anonymous)"), "anonymous");
-});
-
-test("authorPortraitSrc returns null for an author not in the set", () => {
-  assert.equal(authorPortraitSrc("Someone Entirely Made Up XYZ"), null);
-});
-
-test("authorPortraitSrc returns the expected path for a known, permanent author", () => {
-  // Edgar Allan Poe is one of the 4 original hand-processed portraits, not
-  // subject to the automated pipeline adding/removing authors over time —
-  // safe to assert on directly, unlike the mechanically-generated set.
-  assert.equal(authorPortraitSrc("Edgar Allan Poe"), "/authors/edgar-allan-poe.png");
 });

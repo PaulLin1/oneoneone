@@ -8,15 +8,17 @@ keeping it running.
 
 ## The moving parts, in one paragraph
 
-Three things have to agree with each other: **Neon** (Postgres — the
-content catalog), **Vercel** (hosts the Next.js app, reads from Neon at
-request time), and **GitHub** (the source of truth for code, plus two
-Actions: `ci.yml` checks every push/PR, `content-pipeline.yml` grows the
-catalog and author portraits on its own). Vercel and `content-pipeline.yml`
-each need their own copy of `DATABASE_URL`; `content-pipeline.yml` also
-needs `ANTHROPIC_API_KEY`. Nothing else holds state — the app itself is
-stateless besides that one connection string, which is what makes most of
-what follows straightforward.
+Four things have to agree with each other: **Neon** (Postgres — content,
+accounts, everything), **Vercel** (hosts the Next.js app, reads from Neon
+at request time), **Cloudflare R2** (optional — author-portrait images;
+without it, every author just shows a generated initial instead of a real
+photo), and **GitHub** (the source of truth for code, plus two Actions:
+`ci.yml` checks every push/PR, `content-pipeline.yml` grows the catalog and
+author portraits on its own). Vercel and `content-pipeline.yml` each need
+their own copy of `DATABASE_URL`; `content-pipeline.yml` also needs
+`ANTHROPIC_API_KEY` and, if you want it publishing real portraits, the
+`R2_*` secrets. The app itself is stateless besides the database
+connection, which is what makes most of what follows straightforward.
 
 ## Making a change and shipping it
 
@@ -63,18 +65,19 @@ force-push or rewrite history on `main` — revert forward.
 ## Database changes
 
 - **Adding a migration**: new file in `db/migrations/`, numbered
-  sequentially (`0006_whatever.sql`), following the style of the existing
+  sequentially (`0007_whatever.sql`), following the style of the existing
   ones — a comment at the top explaining *why*, not just what. Apply it
   directly against the production Neon database:
   ```bash
-  psql "$DATABASE_URL" -f db/migrations/0006_whatever.sql
+  psql "$DATABASE_URL" -f db/migrations/0007_whatever.sql
   ```
   There's no separate staging database and no down-migrations — write
   migrations to be additive where possible (new nullable columns, new
   tables) so a mistake is easy to unwind by hand rather than requiring a
   paired rollback script. `0003_curation_and_dedup.sql`,
-  `0004_author_portraits.sql`, and `0005_accounts.sql` are all examples of
-  purely additive migrations against a live schema.
+  `0004_author_portraits.sql`, `0005_accounts.sql`, and
+  `0006_portrait_urls.sql` are all examples of purely additive migrations
+  against a live schema.
 - **If you want a safety net before running something against production**:
   Neon supports branching a database (a cheap, instant copy-on-write
   clone) from the Neon console — create a branch, point a local
@@ -113,10 +116,10 @@ reviewer would do by hand — see "Automation" and "Content pipeline" in
   you fire it by hand while it's otherwise paused.
 - **To undo a specific decision it made**: same tools as any manual
   mistake — `npm run review -- reject <id>` / archive a bad `works` row
-  (see "Database changes" above) for a bad promotion; delete the
-  `public/authors/<slug>.png` file and remove the name from
-  `AUTHORS_WITH_PORTRAIT` in `lib/authorPortraits.ts` for a bad portrait,
-  then commit that revert.
+  (see "Database changes" above) for a bad promotion;
+  `update authors set portrait_url = null where name = '...'` for a bad
+  portrait (it'll fall back to the generated initial mark immediately, no
+  commit needed either way — see "Author portraits" in README.md).
 - **If it stops running or starts failing**: GitHub emails the repo's
   owner on workflow failure by default — no separate alerting needed. The
   most common cause is one of its two secrets (`DATABASE_URL`,
@@ -163,7 +166,7 @@ See "Accounts" in `README.md` for the architecture. Operationally:
 | `ANTHROPIC_API_KEY` | GitHub Actions repo secret only | `content-pipeline.yml`'s Claude Code agent step |
 | `AUTH_SECRET` | `.env.local` · Vercel project env vars | Auth.js session/cookie signing — set this everywhere regardless of whether sign-in is configured yet; generate with `npx auth secret` |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | `.env.local` · Vercel project env vars | Sign-in (`lib/auth.ts`) — genuinely optional; the app runs fine without these, sign-in just won't work |
-| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars | Author-portrait storage — optional; see the portrait pipeline docs |
+| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars · GitHub Actions repo secrets (so `content-pipeline.yml` can publish real portraits) | Author-portrait storage — genuinely optional; without it every author just shows a generated initial instead of a real photo, nothing errors |
 
 If the Neon connection string ever changes (new project, rotated
 credentials, moved to a different region), it has to be updated
@@ -175,19 +178,25 @@ committed).
 
 ## Moving or re-platforming
 
-Nothing here is tied to a specific host besides the two SaaS pieces
-(Neon, Vercel), and both are swappable independently of each other and of
-the code:
+Nothing here is tied to a specific host besides the three SaaS pieces
+(Neon, Vercel, R2), and all three are swappable independently of each
+other and of the code:
 
 - **Moving the database**: create a new Neon (or any Postgres) project,
-  apply the four migrations in order, run `npm run seed`, update
+  apply the migrations in order, run `npm run seed`, update
   `DATABASE_URL` everywhere (see the table above). The app has no other
   database-specific code — `lib/db.ts` is a single `neon(url)` call.
 - **Moving off Vercel**: `next.config.ts` has no Vercel-specific
   configuration (no adapters, no `output: "export"` or platform-specific
   options) — `npm run build && npm run start` is a plain Next.js server
   that runs anywhere Node runs (a container, a VM, another PaaS). The only
-  thing to carry over is the `DATABASE_URL` env var at runtime.
+  thing to carry over is the env vars at runtime.
+- **Moving off R2**: `lib/r2.ts` is a plain `@aws-sdk/client-s3` client
+  pointed at R2's S3-compatible endpoint — any S3-compatible store (actual
+  S3, Backblaze B2, MinIO self-hosted) works by changing the endpoint URL
+  and swapping `R2_*` for that provider's credentials. Nothing else in the
+  app knows or cares where portrait images physically live; it only ever
+  reads `authors.portrait_url`, a plain URL string.
 - **Moving the GitHub repo** (new org, new owner, a fork): update the
   `origin` remote locally, and re-add both repo secrets on the new
   repo — GitHub Actions secrets don't transfer with a repo transfer/fork.

@@ -29,6 +29,11 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: "Bash,Read,Edit,Write,WebFetch,WebSearch"
@@ -83,27 +88,34 @@ jobs:
                  can't actually confirm public-domain status for:
                  `npm run review -- reject <id> "reason"`.
 
-            4. Author portraits: find any author on an approved work who
-               isn't yet in AUTHORS_WITH_PORTRAIT in lib/authorPortraits.ts.
-               For each: `npm run fetch-author-portrait -- "Name"`, then
-               `npm run process-author-portraits`, then actually
-               look at the resulting public/authors/<slug>.png with the Read
-               tool. Only add the name to AUTHORS_WITH_PORTRAIT if it's
-               genuinely legible (a real recognizable face, not a tiny
-               sliver, not noise-eaten, correct crop) — same bar described
-               in the comment atop lib/authorPortraits.ts. If it's bad,
-               delete the output PNG and leave that author without a
-               portrait rather than shipping something broken-looking.
+            4. Author portraits: find any author on an approved work whose
+               authors.portrait_url is still null (`select name from
+               authors a join works w on w.author_id = a.id where
+               w.status = 'approved' and a.portrait_url is null`, or just
+               eyeball it — there aren't many). For each:
+               `npm run fetch-author-portrait -- "Name"`, then
+               `npm run process-author-portraits`, then actually look at
+               the resulting public/authors/_staging/<slug>.png with the
+               Read tool. Only publish it —
+               `npm run publish-author-portrait -- "Name"` (uploads to R2,
+               sets authors.portrait_url, no commit involved) — if it's
+               genuinely legible: a real recognizable face, not a tiny
+               sliver, not noise-eaten, correct crop. If it's bad, delete
+               the staged file and leave that author without a portrait —
+               the reading pages fall back to a generated initial mark
+               automatically (see components/AuthorMark.tsx), so this is
+               never a broken-looking gap, just a plainer one.
 
             5. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
-               `npm run build` must all pass clean.
+               `npm test`, `npm run build` must all pass clean.
 
-            6. Commit whatever files changed (lib/authorPortraits.ts,
-               public/authors/*.png, seed/source-pool.json) with a clear
-               message describing what was added/rejected/portrait-added,
-               and push to main. The database writes from promote/reject
-               already happened live when you ran those commands — this
-               commit is just for the files that changed alongside them.
+            6. Commit whatever *files* changed (seed/source-pool.json is
+               the main one now — portraits publish straight to R2/the
+               database, no file to commit) with a clear message describing
+               what was added/rejected, and push to main. All the database
+               writes (promote/reject/publish) already happened live when
+               you ran those commands — this commit, if there's anything to
+               commit at all, is only for files.
 
             If a step finds nothing to do (no new candidates, no missing
             portraits), that's a normal, successful run — just say so and

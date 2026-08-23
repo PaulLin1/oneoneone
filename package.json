@@ -13,10 +13,12 @@
     "load-candidates": "tsx --env-file=.env.local scripts/load-candidates.ts",
     "review": "tsx --env-file=.env.local scripts/promote-candidate.ts",
     "fetch-author-portrait": "tsx --env-file=.env.local scripts/fetch-author-portrait.ts",
-    "process-author-portraits": "tsx scripts/process-author-portraits.ts"
+    "process-author-portraits": "tsx scripts/process-author-portraits.ts",
+    "publish-author-portrait": "tsx --env-file=.env.local scripts/publish-author-portrait.ts"
   },
   "dependencies": {
     "@auth/neon-adapter": "^1.11.3",
+    "@aws-sdk/client-s3": "^3.1116.0",
     "@neondatabase/serverless": "^1.1.0",
     "next": "16.3.1",
     "next-auth": "^5.0.0-beta.32",

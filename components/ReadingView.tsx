@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { CATEGORY_ACCENT } from "@/lib/categoryColor";
-import { authorPortraitSrc } from "@/lib/authorPortraits";
+import { AuthorMark } from "@/components/AuthorMark";
 import type { Work } from "@/lib/types";
 
 const CATEGORY_LABEL: Record<Work["category"], string> = {
@@ -14,7 +14,6 @@ const CATEGORY_LABEL: Record<Work["category"], string> = {
 export function ReadingView({ work }: { work: Work }) {
   const isPoem = work.category === "poem";
   const accent = CATEGORY_ACCENT[work.category];
-  const portraitSrc = authorPortraitSrc(work.author);
 
   // Records reading history for signed-in readers only — the API no-ops
   // for anonymous requests (see app/api/reading-history/route.ts), so this
@@ -38,22 +37,14 @@ export function ReadingView({ work }: { work: Work }) {
           {CATEGORY_LABEL[work.category]} · ~{work.reading_minutes} min
         </span>
 
-        {portraitSrc && (
-          <div
-            aria-hidden="true"
-            className={`mx-auto mt-6 h-40 w-40 sm:h-48 sm:w-48 ${accent.bg}`}
-            style={{
-              maskImage: `url(${portraitSrc})`,
-              WebkitMaskImage: `url(${portraitSrc})`,
-              maskRepeat: "no-repeat",
-              WebkitMaskRepeat: "no-repeat",
-              maskPosition: "center",
-              WebkitMaskPosition: "center",
-              maskSize: "contain",
-              WebkitMaskSize: "contain",
-            }}
-          />
-        )}
+        <AuthorMark
+          portraitUrl={work.author_portrait_url}
+          authorName={work.author}
+          accentBg={accent.bg}
+          accentText={accent.text}
+          className="mx-auto mt-6 h-40 w-40 sm:h-48 sm:w-48"
+          initialSizeClassName="text-6xl sm:text-7xl"
+        />
 
         <h1 className="mt-6 font-serif text-3xl leading-tight sm:text-4xl">{work.title}</h1>
         <p className="mt-4 text-sm text-ink-soft">

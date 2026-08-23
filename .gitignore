@@ -24,9 +24,12 @@
 .DS_Store
 *.pem
 
-# raw, unprocessed author images staged by scripts/fetch-author-portrait.ts —
-# never committed; only the hand-processed public/authors/*.png is
-public/authors/_source/
+# Author portraits live in R2 now (authors.portrait_url — see
+# db/migrations/0006_portrait_urls.sql), not as git-committed static
+# files. Everything under public/authors/ is local scratch space: _source/
+# is the raw fetch, _staging/ is the processed-but-unreviewed output —
+# neither is ever meant to be committed.
+public/authors/
 
 # debug
 npm-debug.log*

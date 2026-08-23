@@ -7,6 +7,7 @@ export type Work = {
   title: string;
   author: string;
   author_note: string | null;
+  author_portrait_url: string | null;
   year: number | null;
   category: WorkCategory;
   text_content: string | null;

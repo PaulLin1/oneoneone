@@ -15,6 +15,7 @@ const WorkSchema = z.object({
   title: z.string(),
   author: z.string(),
   author_note: z.string().nullable(),
+  author_portrait_url: z.string().nullable(),
   year: z.number().nullable(),
   category: WorkCategorySchema,
   text_content: z.string().nullable(),

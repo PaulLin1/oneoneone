@@ -59,7 +59,7 @@ different infrastructure, see `OPERATIONS.md`.
    cp .env.local.example .env.local
    ```
 
-2. Apply the schema (run migrations in order — `0001` through `0005`),
+2. Apply the schema (run migrations in order — `0001` through `0006`),
    either via `psql` or by pasting each file into the Neon SQL editor:
 
    ```bash
@@ -68,6 +68,7 @@ different infrastructure, see `OPERATIONS.md`.
    psql "$DATABASE_URL" -f db/migrations/0003_curation_and_dedup.sql
    psql "$DATABASE_URL" -f db/migrations/0004_author_portraits.sql
    psql "$DATABASE_URL" -f db/migrations/0005_accounts.sql
+   psql "$DATABASE_URL" -f db/migrations/0006_portrait_urls.sql
    ```
 
    `0002` is what actually defines the current schema (normalized authors/
@@ -78,7 +79,9 @@ different infrastructure, see `OPERATIONS.md`.
    true`), and source-trust tiering. `0004` adds `authors.portrait_source_url`
    — see "Author portraits" below. `0005` adds accounts, sessions, and
    reading history — see "Accounts" below; the app runs fully without ever
-   configuring sign-in, this just needs the tables to exist.
+   configuring sign-in, this just needs the tables to exist. `0006` adds
+   `authors.portrait_url` (the actual, published portrait) and joins it
+   through `works_feed` — see "Author portraits" below.
 
 3. Seed the content catalog from `seed/works.json`:
 
@@ -169,16 +172,19 @@ needs a human to run anything.
   against the sourcing/rights/quality rules in this file and
   `seed/README.md`, promote or reject, then find any author still missing
   a portrait and run + visually QA that pipeline too. The full prompt is in
-  the workflow file itself. Needs two secrets:
-  - `DATABASE_URL` — same Neon connection string as everywhere else.
-  - `ANTHROPIC_API_KEY` — an Anthropic API key (console.anthropic.com),
-    scoped to whatever spend limit you're comfortable with; each run
-    consumes real API usage.
+  the workflow file itself. Needs `DATABASE_URL`, `ANTHROPIC_API_KEY` (an
+  Anthropic API key from console.anthropic.com, scoped to whatever spend
+  limit you're comfortable with — each run consumes real API usage), and
+  the `R2_*` secrets if you want it able to publish real portraits rather
+  than falling back to initials for every new author (see "Author
+  portraits" below).
 
   **To check on it**: the Actions tab shows each run's log directly, same
   as `ci.yml`. Nothing it does is silent or hidden — promotions/rejections
-  show up as normal `npm run review` output in the log, and any files it
-  changed (new portraits, `lib/authorPortraits.ts`, `seed/source-pool.json`)
+  show up as normal `npm run review` output in the log, portrait
+  publishes as normal `npm run publish-author-portrait` output, and any
+  *files* it changed (usually just `seed/source-pool.json`, if anything —
+  portraits publish straight to R2/the database now, no file involved)
   land in a normal commit to `main` you can read like any other.
 
   **To intervene**: nothing about this workflow prevents also running any
@@ -235,9 +241,18 @@ needs a human to run anything.
   `unverified`) from a publication year or author death year; used by the
   fetch/load pipeline so nothing gets marked public domain without the math
   actually clearing the U.S. 96-years-after-publication bar.
-- `lib/authorPortraits.ts` — the hand-maintained set of authors with a
-  processed portrait asset in `public/authors/`, plus `authorSlug()`. See
-  "Author portraits" below.
+- `lib/authorPortraits.ts` — just `authorSlug()` now, the naming
+  convention used to derive an R2 object key from an author's name.
+  Portrait display itself is entirely DB-driven — see "Author portraits"
+  below.
+- `lib/r2.ts` — the Cloudflare R2 client (S3-compatible, via
+  `@aws-sdk/client-s3`) portraits upload to. Lazily constructed for the
+  same reason `lib/auth-db.ts`'s Pool is: importable from a route bundled
+  at `next build` time without needing R2 credentials just to build.
+- `components/AuthorMark.tsx` — renders an author's real portrait (CSS
+  `mask-image`) or, when `author_portrait_url` is null, a generated
+  initial-letter fallback — see "Author portraits" below for why this is
+  what makes coverage 100%.
 - `seed/works.json` — the hand-curated content catalog; see `seed/README.md`
   for curation conventions. Re-import any time with `npm run seed`
   (idempotent — upserts on title+author).
@@ -249,16 +264,18 @@ needs a human to run anything.
   standard as everything else here.
 - `scripts/fetch-candidates.ts` / `load-candidates.ts` / `promote-candidate.ts`
   — the content pipeline described below.
-- `scripts/fetch-author-portrait.ts` / `process-author-portraits.ts` — fetch
-  + process steps of the author-portrait pipeline. See "Author portraits"
-  below.
+- `scripts/fetch-author-portrait.ts` / `process-author-portraits.ts` /
+  `publish-author-portrait.ts` — the fetch / process / publish steps of the
+  author-portrait pipeline. See "Author portraits" below.
 - `.github/workflows/content-pipeline.yml` — runs the content + portrait
   pipeline unattended on a schedule via a Claude Code agent. See
   "Automation" above.
 - `db/migrations/0002_scalable_schema.sql` — the schema (authors, tags,
   works, content_candidates, works_feed); `0003_curation_and_dedup.sql` adds
   fuzzy dedup, `rights_status`, and source tiering; `0004_author_portraits.sql`
-  adds `authors.portrait_source_url`. See "Content pipeline" below for the
+  adds `authors.portrait_source_url`; `0006_portrait_urls.sql` adds
+  `authors.portrait_url` (the published portrait) and joins it through
+  `works_feed`. See "Content pipeline" and "Author portraits" below for the
   design.
 - `ROADMAP.md` — ideas specced but deliberately not built yet (licensed
   content, a physical-book "companion" mode, diversity-balanced rotation,
@@ -426,66 +443,80 @@ history and the ability to recommend a work.
 
 ## Author portraits
 
-Three steps, same as always — fetch raw material, process it into the
-site's style, wire it up — but all three now run automatically as part of
-`content-pipeline.yml` (see "Automation" above) whenever a newly-promoted
-work's author doesn't have one yet. Portraits stay off the `content_candidates`
-review queue regardless of who/what runs this — there's no `status` column
-on `authors` at all, so there's no candidate table to land in; the gate is
-entirely the visual QA step below.
+Fully database-driven — `authors.portrait_url` (added in
+`db/migrations/0006_portrait_urls.sql`) is the only thing that decides what
+renders, joined through as `work.author_portrait_url` via `works_feed`.
+There's no static file, no hand-maintained list of names in code: adding,
+replacing, or removing a portrait is a data change (a Cloudflare R2 upload
++ one `update authors`), not a code change — no commit, no redeploy.
+
+**100% coverage, always**: `components/AuthorMark.tsx` renders the real
+portrait (a flat black-and-white PNG applied as a CSS `mask-image`) when
+`author_portrait_url` is set, or a generated initial-letter mark in the
+category's accent color when it's `null`. Every work shows *something*
+identifying its author — a real photo where one exists and cleared review,
+a plain initial where it doesn't. Nothing ever falls back to a
+portrait-less layout.
+
+R2 is optional infrastructure for the *real-photo* half of that — without
+`R2_*` configured (see the secrets table in `OPERATIONS.md`), every author
+just shows their initial. Nothing breaks.
+
+Three steps to add a real one, all runnable by hand or automatically by
+`content-pipeline.yml` (see "Automation" above) for any approved work's
+author still missing one:
 
 1. **Fetch**: `npm run fetch-author-portrait -- "Author Name"`, or
-   `npm run fetch-author-portrait -- --all` to sweep every author currently
-   missing `portrait_source_url`. For each name it:
+   `npm run fetch-author-portrait -- --all` to sweep every author never
+   fetched yet. For each name it:
    - queries Wikipedia's REST summary API for that author's short
      `description` (e.g. `"American writer and critic (1809–1849)"`) and
      parses `birth_year`/`death_year` out of it — the plaintext `extract`
      field strips parentheticals, so `description` is the reliable field,
      not `extract`;
    - downloads the raw lead image to `public/authors/_source/<slug>.<ext>`
-     (gitignored — a working file, never committed, never served);
-   - upserts `birth_year`, `death_year`, and `portrait_source_url` onto the
-     `authors` row, **only where currently null** (`coalesce`) — it never
-     overwrites a hand-corrected value, and it never touches `bio` at all,
-     since that column is `author_note` in the reading view and is
-     explicitly hand-written editorial content (see `seed/README.md`), not
-     something to auto-fill from a scraped extract. The extract still
-     prints to the console as a starting point for whoever writes that bio
-     by hand.
+     (gitignored — working files, never committed);
+   - upserts `birth_year`, `death_year`, and `portrait_source_url` (the raw
+     image's own URL — provenance, distinct from `portrait_url`, the
+     *published* R2 asset) onto the `authors` row, **only where currently
+     null** (`coalesce`) — never overwrites a hand-corrected value, and
+     never touches `bio`, which is hand-written editorial content (see
+     `seed/README.md`), not something to auto-fill from a scraped extract.
+     The extract still prints to the console as a starting point for
+     whoever writes that bio by hand.
    - A retry step strips a trailing curator disambiguator (`"Saki (H. H.
      Munro)"` → `"Saki"`) on a 404, since that's a catalog convention, not
      a real Wikipedia article title.
-2. **Process**: `npm run process-author-portraits` turns every
-   staged raw image into the site's flat black-and-white mark — content-box
-   crop (zooms toward the actual subject, not just sharp's non-zooming
-   attention gravity), a blur pass before threshold to suppress halftone/
-   scan-dot noise, a connected-component pass that erases small isolated
-   ink specks outside the actual silhouette back to background (stray dots
-   that survive the blur — see the comment atop `lib/authorPortraits.ts`
-   for what this catches and what it doesn't), then encodes the result as
-   an alpha-channel stencil (solid black RGB, shape lives in transparency)
-   matching how `CategoryColumn`/`ReadingView`'s `mask-image` actually
-   expects it — *not* a plain opaque black/white PNG, which renders as a
-   solid colored square (browsers fall back to inverted luminance masking
-   without an alpha channel). Pass `--force` to reprocess an author who
-   already has an output. This is mechanical and doesn't always work:
-   source photos with a lot of blank margin, heavy scan degradation, dense
-   large-area noise the speck filter can't touch, actual background clutter
-   in the source photo, or a Wikipedia lead image that isn't actually a
-   headshot (a memorial statue, say) can come out illegible.
-3. **QA + wire it up**: this is the step that used to be "by hand, forever"
-   — actually looking at each `public/authors/<slug>.png` and judging
-   whether it's legible before adding the author's exact name string to
-   `AUTHORS_WITH_PORTRAIT` in `lib/authorPortraits.ts` (the only thing that
-   gates whether a portrait renders — no file-existence check). The
-   scheduled agent does this with the Read tool, same visual judgment a
-   human would apply; a bad result gets its output file deleted rather than
-   wired in and left broken. To do this pass yourself instead of waiting
-   for the schedule: process, then open each new `public/authors/*.png` and
-   look — a good one is a clear, recognizable, tightly-cropped face; add it
-   to the set. A bad one gets deleted.
+2. **Process**: `npm run process-author-portraits` turns every staged raw
+   image into the site's flat black-and-white mark — content-box crop
+   (zooms toward the actual subject, not just sharp's non-zooming attention
+   gravity), a blur pass before threshold to suppress halftone/scan-dot
+   noise, a connected-component pass that erases small isolated ink specks
+   outside the actual silhouette back to background (stray dots that
+   survive the blur), then encodes the result as an alpha-channel stencil
+   (solid black RGB, shape lives in transparency) matching how
+   `AuthorMark`'s `mask-image` actually expects it — *not* a plain opaque
+   black/white PNG, which renders as a solid colored square (browsers fall
+   back to inverted luminance masking without an alpha channel). Output
+   lands in `public/authors/_staging/<slug>.png` — gitignored, unreviewed,
+   never served directly. Pass `--force` to reprocess an author already
+   staged. This is mechanical and doesn't always work: source photos with a
+   lot of blank margin, heavy scan degradation, dense large-area noise the
+   speck filter can't touch, actual background clutter in the source photo,
+   or a Wikipedia lead image that isn't actually a headshot (a memorial
+   statue, say) can come out illegible.
+3. **QA + publish**: look at each `public/authors/_staging/<slug>.png` —
+   the scheduled agent does this with the Read tool, same visual judgment a
+   human would apply. A good one (a real recognizable face, not a tiny
+   sliver, not noise-eaten, correct crop) gets published:
+   `npm run publish-author-portrait -- "Author Name"` (or `--all` for
+   everything currently staged) uploads it to R2 and sets
+   `authors.portrait_url` — that's the entire "wire it up" step now, no
+   file to edit. A bad one just gets deleted from `_staging/`, left
+   unpublished; that author keeps showing their fallback initial until
+   someone tries again with a better source.
 
-Before using any fetched image for real: verify its own license on
+Before publishing any fetched image for real: verify its own license on
 Wikipedia/Commons. An author's *writing* being public domain says nothing
 about whether a particular 20th-century photograph of them is — some
 portraits on Commons are CC-BY-SA or otherwise restricted, not PD.

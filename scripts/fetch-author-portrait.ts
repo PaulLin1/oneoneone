@@ -128,7 +128,12 @@ async function fetchOne(name: string) {
   }
 }
 
-/** Authors with no bio yet — the field this script deliberately never fills. */
+/**
+ * Authors never fetched at all yet — checks portrait_source_url (was a raw
+ * image ever pulled?), not portrait_url (was one ever published?), so an
+ * author whose photo turned out unusable during review doesn't get
+ * re-fetched from Wikipedia every single automated run forever.
+ */
 async function authorsMissingPortrait(): Promise<string[]> {
   const rows = await sql`
     select name from authors where portrait_source_url is null order by name
@@ -155,12 +160,12 @@ async function main() {
   }
 
   console.log(
-    `\nDownloaded images are raw, unprocessed Wikipedia source images staged in public/authors/_source/ ` +
-      `— never wired up automatically. To actually add a portrait: crop it, convert to the flat black-and-white ` +
-      `treatment (see the comment atop lib/authorPortraits.ts), save it as public/authors/<slug>.png, and add ` +
-      `the author's name to AUTHORS_WITH_PORTRAIT in lib/authorPortraits.ts. Verify the source image's own ` +
-      `license/PD status before using it — Wikipedia/Commons images aren't automatically public domain just ` +
-      `because the author's writing is.`
+    `\nDownloaded images are raw, unprocessed Wikipedia source images staged in public/authors/_source/. Next: ` +
+      `\`npm run process-author-portraits\` to crop + threshold them into public/authors/_staging/, glance over ` +
+      `each one, then \`npm run publish-author-portrait -- "Name"\` (or --all) to upload the good ones to R2 and ` +
+      `set authors.portrait_url — see "Author portraits" in README.md. Verify the source image's own license/PD ` +
+      `status before publishing it — Wikipedia/Commons images aren't automatically public domain just because ` +
+      `the author's writing is.`
   );
 }
 
