@@ -249,6 +249,9 @@ needs a human to run anything.
   `@aws-sdk/client-s3`) portraits upload to. Lazily constructed for the
   same reason `lib/auth-db.ts`'s Pool is: importable from a route bundled
   at `next build` time without needing R2 credentials just to build.
+- `scripts/setup-r2-cors.ts` — one-time bucket setup (`npm run
+  setup-r2-cors`) so portraits actually render (see "Author portraits"
+  below for why this is needed at all).
 - `components/AuthorMark.tsx` — renders an author's real portrait (CSS
   `mask-image`) or, when `author_portrait_url` is null, a generated
   initial-letter fallback — see "Author portraits" below for why this is
@@ -472,7 +475,14 @@ a gap to close (see above), not a design feature.
 R2 is optional infrastructure for the real-photo half of this — without
 `R2_*` configured (see the secrets table in `OPERATIONS.md`), every author
 falls back to their initial. Nothing breaks, but that's a config gap to
-fix, not an intended mode.
+fix, not an intended mode. **After setting `R2_*`, run `npm run
+setup-r2-cors` once** — R2 buckets have no CORS policy by default, and
+without one, portraits render as blank space (not a broken-image icon,
+fully invisible) specifically in Safari/WebKit-family browsers: CSS
+`mask-image` treats a cross-origin image as a sub-resource load subject to
+CORS, unlike a plain `<img>` or a direct navigation to the same URL, which
+is why the object can look perfectly reachable (it is) while still not
+rendering on the page.
 
 Three steps to add a real one, all runnable by hand or automatically by
 `content-pipeline.yml` (see "Automation" above) for any approved work's

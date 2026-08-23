@@ -166,7 +166,7 @@ See "Accounts" in `README.md` for the architecture. Operationally:
 | `ANTHROPIC_API_KEY` | GitHub Actions repo secret only | `content-pipeline.yml`'s Claude Code agent step |
 | `AUTH_SECRET` | `.env.local` · Vercel project env vars | Auth.js session/cookie signing — set this everywhere regardless of whether sign-in is configured yet; generate with `npx auth secret` |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | `.env.local` · Vercel project env vars | Sign-in (`lib/auth.ts`) — genuinely optional; the app runs fine without these, sign-in just won't work |
-| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars · GitHub Actions repo secrets (so `content-pipeline.yml` can publish real portraits) | Author-portrait storage — genuinely optional; without it every author just shows a generated initial instead of a real photo, nothing errors |
+| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars · GitHub Actions repo secrets (so `content-pipeline.yml` can publish real portraits) | Author-portrait storage — genuinely optional; without it every author just shows a generated initial instead of a real photo, nothing errors. **After setting these, run `npm run setup-r2-cors` once** — see Troubleshooting below for what happens if you skip it. |
 
 If the Neon connection string ever changes (new project, rotated
 credentials, moved to a different region), it has to be updated
@@ -227,3 +227,15 @@ other and of the code:
 - **A GitHub Action secret needs rotating**: update it in
   **Settings → Secrets and variables → Actions** — no code or workflow
   change needed, the workflows just read `secrets.X` by name.
+- **Author portraits are uploaded to R2 (visible in the bucket, load fine
+  if you open the object's public URL directly) but render as blank space
+  on the actual site**: this is CORS, not networking or an ad blocker —
+  don't chase those first. `components/AuthorMark.tsx` applies portraits
+  via CSS `mask-image`, which some browsers (Safari/WebKit in particular)
+  treat as a cross-origin sub-resource load subject to CORS — unlike a
+  plain `<img>` or a direct navigation to the same URL, neither of which
+  need it, which is exactly why "the URL works when I open it myself" and
+  "it's blank on the page" can both be true at once. Fix: `npm run
+  setup-r2-cors` (needs `R2_*` in `.env.local`) — sets
+  `Access-Control-Allow-Origin: *` on the bucket. One-time; only needs
+  re-running if the bucket is ever recreated.
