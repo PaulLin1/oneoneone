@@ -29,11 +29,8 @@ export async function Masthead() {
         <span className="text-purple">one</span>
       </Link>
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <Link href="/archive" className={`${CHIP} bg-blue text-white`}>
+        <Link href="/archive" className={`${CHIP} bg-ink text-yellow`}>
           Archive
-        </Link>
-        <Link href="/about" className={`${CHIP} bg-pink text-white`}>
-          About
         </Link>
         {session?.user ? (
           <Link href="/account" className={`${CHIP} bg-purple text-white`}>
@@ -53,7 +50,7 @@ export async function Masthead() {
               await signIn("google");
             }}
           >
-            <button type="submit" className={`${CHIP} bg-purple text-white`}>
+            <button type="submit" className={`${CHIP} bg-ink text-yellow`}>
               Sign in
             </button>
           </form>

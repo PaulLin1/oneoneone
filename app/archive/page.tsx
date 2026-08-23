@@ -58,7 +58,7 @@ export default async function ArchivePage() {
                           <li key={work.category}>
                             <Link
                               href={`/archive/${day}/${work.category}`}
-                              className="flex items-center gap-3 py-1 text-sm text-ink-soft transition-colors hover:text-ink"
+                              className="-mx-4 flex items-center gap-3 px-4 py-1.5 text-sm text-ink-soft transition-colors hover:bg-black/5 hover:text-ink"
                             >
                               <span
                                 className={`w-12 shrink-0 px-1.5 py-0.5 text-center text-[0.6rem] font-semibold uppercase tracking-[0.15em] ${accent.bg} ${accent.text}`}
