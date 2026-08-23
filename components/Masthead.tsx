@@ -35,13 +35,15 @@ export async function Masthead() {
         <Link href="/about" className={`${CHIP} bg-pink text-white`}>
           About
         </Link>
-        <Link href="/recommend" className={`${CHIP} bg-purple text-white`}>
-          Recommend
-        </Link>
         {session?.user ? (
-          <Link href="/account" className={`${CHIP} bg-ink text-yellow`}>
-            Account
-          </Link>
+          <>
+            <Link href="/recommend" className={`${CHIP} bg-purple text-white`}>
+              Recommend
+            </Link>
+            <Link href="/account" className={`${CHIP} bg-ink text-yellow`}>
+              Account
+            </Link>
+          </>
         ) : (
           <form
             action={async () => {
