@@ -36,22 +36,24 @@ export async function Masthead() {
           About
         </Link>
         {session?.user ? (
-          <>
-            <Link href="/recommend" className={`${CHIP} bg-purple text-white`}>
-              Recommend
-            </Link>
-            <Link href="/account" className={`${CHIP} bg-ink text-yellow`}>
-              Account
-            </Link>
-          </>
+          <Link href="/account" className={`${CHIP} bg-purple text-white`}>
+            Account
+          </Link>
         ) : (
           <form
+            // display: contents drops the form out of the flex box tree so
+            // the button becomes a direct flex item, sized/aligned exactly
+            // like the Link chips beside it — without this, the form's own
+            // untouched box (the CHIP class's -my-2 only shrinks the
+            // button, not its form wrapper) throws off height and
+            // vertical alignment in the row.
+            className="contents"
             action={async () => {
               "use server";
               await signIn("google");
             }}
           >
-            <button type="submit" className={`${CHIP} bg-ink text-yellow`}>
+            <button type="submit" className={`${CHIP} bg-purple text-white`}>
               Sign in
             </button>
           </form>

@@ -17,7 +17,7 @@ type HistoryRow = {
   title: string;
   author: string;
   category: WorkCategory;
-  read_at: string;
+  read_at: Date;
 };
 
 export default async function AccountPage() {
@@ -110,7 +110,7 @@ export default async function AccountPage() {
                       {CATEGORY_LABEL[row.category]}
                     </span>
                     <span className="text-xs text-ink-soft">
-                      {formatDisplayDate(row.read_at.slice(0, 10))}
+                      {formatDisplayDate(row.read_at.toISOString().slice(0, 10))}
                     </span>
                   </div>
                 </li>
