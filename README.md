@@ -450,17 +450,29 @@ There's no static file, no hand-maintained list of names in code: adding,
 replacing, or removing a portrait is a data change (a Cloudflare R2 upload
 + one `update authors`), not a code change — no commit, no redeploy.
 
-**100% coverage, always**: `components/AuthorMark.tsx` renders the real
-portrait (a flat black-and-white PNG applied as a CSS `mask-image`) when
-`author_portrait_url` is set, or a generated initial-letter mark in the
-category's accent color when it's `null`. Every work shows *something*
-identifying its author — a real photo where one exists and cleared review,
-a plain initial where it doesn't. Nothing ever falls back to a
-portrait-less layout.
+**The goal is a real photo for every author, not a fallback.** All 26
+current authors have one — every one of them was verified to actually
+render a legible face before being published; several took multiple
+source-image attempts and a manual pre-crop to get right (see the
+"Author portraits" step in `.github/workflows/content-pipeline.yml` for
+the actual technique: prefer engravings/etchings over paintings, prefer a
+plain background over a candid/environmental shot, pre-crop tightly with
+sharp when the subject is small in the frame rather than trusting
+`process-author-portraits.ts`'s own content-detection to find it). The
+scheduled agent keeps trying — alternate Wikimedia Commons sources, a
+manual crop — rather than accepting the first failed attempt.
 
-R2 is optional infrastructure for the *real-photo* half of that — without
+`components/AuthorMark.tsx` does still render a generated initial-letter
+mark when `author_portrait_url` is `null`, in the category's accent color
+— that exists purely so a *brand-new* author never renders broken in the
+short window between being promoted and getting a portrait published, not
+as a permanent, acceptable end state. If you see one in normal use, that's
+a gap to close (see above), not a design feature.
+
+R2 is optional infrastructure for the real-photo half of this — without
 `R2_*` configured (see the secrets table in `OPERATIONS.md`), every author
-just shows their initial. Nothing breaks.
+falls back to their initial. Nothing breaks, but that's a config gap to
+fix, not an intended mode.
 
 Three steps to add a real one, all runnable by hand or automatically by
 `content-pipeline.yml` (see "Automation" above) for any approved work's

@@ -92,19 +92,40 @@ jobs:
                authors.portrait_url is still null (`select name from
                authors a join works w on w.author_id = a.id where
                w.status = 'approved' and a.portrait_url is null`, or just
-               eyeball it — there aren't many). For each:
-               `npm run fetch-author-portrait -- "Name"`, then
-               `npm run process-author-portraits`, then actually look at
-               the resulting public/authors/_staging/<slug>.png with the
-               Read tool. Only publish it —
-               `npm run publish-author-portrait -- "Name"` (uploads to R2,
-               sets authors.portrait_url, no commit involved) — if it's
-               genuinely legible: a real recognizable face, not a tiny
-               sliver, not noise-eaten, correct crop. If it's bad, delete
-               the staged file and leave that author without a portrait —
-               the reading pages fall back to a generated initial mark
-               automatically (see components/AuthorMark.tsx), so this is
-               never a broken-looking gap, just a plainer one.
+               eyeball it — there aren't many). The goal is 100% real-photo
+               coverage, not "try once and fall back to an initial" — the
+               initial-letter fallback in components/AuthorMark.tsx exists
+               for the brief window before a portrait is ready, not as an
+               acceptable permanent state, so don't stop at the first
+               attempt if it doesn't work:
+               - `npm run fetch-author-portrait -- "Name"`, then
+                 `npm run process-author-portraits`, then actually look at
+                 the resulting public/authors/_staging/<slug>.png with the
+                 Read tool.
+               - If it's genuinely legible (a real recognizable face, not a
+                 tiny sliver, not noise-eaten, correct crop), publish it:
+                 `npm run publish-author-portrait -- "Name"` (uploads to
+                 R2, sets authors.portrait_url, no commit involved).
+               - If it's not: don't give up after one try. Query Wikimedia
+                 Commons directly for alternates —
+                 `curl -s -G "https://commons.wikimedia.org/w/api.php" --data-urlencode "action=query" --data-urlencode "generator=search" --data-urlencode "gsrsearch=<Author Name> portrait -statue -stamp" --data-urlencode "gsrnamespace=6" --data-urlencode "gsrlimit=8" --data-urlencode "prop=imageinfo" --data-urlencode "iiprop=url|size" --data-urlencode "format=json" -H "User-Agent: oneoneone/1.0"`
+                 — prefer engravings/etchings over paintings or busy photos
+                 (they threshold far more reliably), and a plain background
+                 over an environmental/candid shot. Download a candidate
+                 straight into public/authors/_source/<slug>.<ext> with
+                 curl (matching the User-Agent convention in
+                 fetch-author-portrait.ts) and re-run process. If the
+                 source photo has the subject small against a lot of
+                 clutter, pre-crop it tightly to just the head/shoulders
+                 with sharp before processing rather than relying on
+                 process-author-portraits.ts's own content-detection to
+                 find it — this alone fixes most failures. It's fine to
+                 spend several attempts per author; this step matters more
+                 than moving fast.
+               - Only actually give up (leave portrait_url null) after a
+                 real effort — a memorial statue or a subject truly too
+                 obscured to ever crop cleanly, not just "the first image
+                 didn't work."
 
             5. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
                `npm test`, `npm run build` must all pass clean.
