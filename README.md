@@ -4,9 +4,11 @@ One poem. One essay. One story. The same three, for everyone, every day.
 
 A shared daily reading ritual — like Wordle, not a personalized feed. The
 day's three works are picked by a fixed, deterministic rotation (same date
-in → same three out, for every reader, everywhere). No accounts, no tracking
-— today's selection is cached in `localStorage` purely so a page refresh
-doesn't re-fetch it; nothing about what you've read is recorded anywhere.
+in → same three out, for every reader, everywhere). No account is needed —
+today's selection is cached in `localStorage` purely so a page refresh
+doesn't re-fetch it; nothing about what you've read is recorded anywhere
+unless you choose to sign in (see "Accounts" below — entirely opt-in, and
+the daily rotation itself is never personalized either way).
 
 - **Theme** — when two or more of today's three share a tag, `selection.theme`
   carries it through to the Share text (`Thread: <tag>`). This is found,
@@ -31,9 +33,12 @@ doesn't re-fetch it; nothing about what you've read is recorded anywhere.
   persisted server-side, and Archive/Share always show the one canonical
   daily pick regardless of whether you shuffled.
 
-No accounts, no comments, no in-app discussion — the site is deliberately
-just the reading + the share hook; if people want to talk about a day, that
-happens wherever they already are, via the hashtag.
+No in-app discussion or comments — the site is deliberately just the
+reading + the share hook; if people want to talk about a day, that happens
+wherever they already are, via the hashtag. An account adds two things and
+nothing else: a private reading history, and the ability to recommend a
+work for the catalog. It's never required, and it never changes what the
+daily rotation shows anyone.
 
 This file covers what the app is and how it's built. For how to ship a
 change, roll one back, rotate a secret, or move any piece of this to
@@ -54,7 +59,7 @@ different infrastructure, see `OPERATIONS.md`.
    cp .env.local.example .env.local
    ```
 
-2. Apply the schema (run migrations in order — `0001` through `0004`),
+2. Apply the schema (run migrations in order — `0001` through `0005`),
    either via `psql` or by pasting each file into the Neon SQL editor:
 
    ```bash
@@ -62,6 +67,7 @@ different infrastructure, see `OPERATIONS.md`.
    psql "$DATABASE_URL" -f db/migrations/0002_scalable_schema.sql
    psql "$DATABASE_URL" -f db/migrations/0003_curation_and_dedup.sql
    psql "$DATABASE_URL" -f db/migrations/0004_author_portraits.sql
+   psql "$DATABASE_URL" -f db/migrations/0005_accounts.sql
    ```
 
    `0002` is what actually defines the current schema (normalized authors/
@@ -70,7 +76,9 @@ different infrastructure, see `OPERATIONS.md`.
    run both back to back with no issue. `0003` adds `pg_trgm`-based fuzzy
    dedup, a `rights_status` column (replacing a hardcoded `public_domain =
    true`), and source-trust tiering. `0004` adds `authors.portrait_source_url`
-   — see "Author portraits" below.
+   — see "Author portraits" below. `0005` adds accounts, sessions, and
+   reading history — see "Accounts" below; the app runs fully without ever
+   configuring sign-in, this just needs the tables to exist.
 
 3. Seed the content catalog from `seed/works.json`:
 
@@ -84,7 +92,13 @@ different infrastructure, see `OPERATIONS.md`.
    npm run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000).
+   Open [http://localhost:3000](http://localhost:3000). Set `AUTH_SECRET`
+   too (`npx auth secret`) — cheap, one-time, and avoids `auth()` logging
+   an error on every request even before sign-in itself is configured.
+   `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (real sign-in) and the R2
+   portrait storage (`R2_*`) are both genuinely optional — see the
+   comments in `.env.local.example` and "Accounts & reviewers" in
+   `OPERATIONS.md` for setting those up.
 
 5. Before pushing any change, run what CI runs: `npm run lint`, `npx tsc
    --noEmit`, `npm test`, `npm run build`. `npm test` runs the pure-logic
@@ -104,17 +118,27 @@ The app is stateless besides the Neon connection, so deployment is just:
    preset auto-detects as Next.js; build command (`next build`) and output
    need no changes.
 3. Before the first deploy (or right after — it only affects runtime, not
-   the build, see below), add one environment variable in the Vercel
+   the build, see below), add environment variables in the Vercel
    project's **Settings → Environment Variables**:
    - `DATABASE_URL` — the same Neon pooled-connection string from your
      `.env.local`. Set it for all three environments (Production, Preview,
      Development) unless you want previews hitting a separate Neon branch —
      Neon's branching feature pairs well with Vercel preview deployments if
      you want that later.
-4. Make sure the target Neon database has actually had the three
-   migrations applied and been seeded (see "Setup" above) — Vercel deploys
-   the app, not the schema; a fresh Neon project needs that done once, by
-   hand, before or after the first deploy.
+   - `AUTH_SECRET` — set this even if you're not setting up sign-in yet
+     (`npx auth secret`); its absence logs an error on every request. The
+     rest of the site (including anonymous reading) works regardless.
+   - `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` — optional, only needed for
+     sign-in to actually work in production (see "Accounts & reviewers" in
+     `OPERATIONS.md`). Add
+     `https://<your-vercel-domain>/api/auth/callback/google` as an
+     authorized redirect URI in the Google OAuth client for this to work.
+   - `R2_*` — optional, only for the author-portrait pipeline's image
+     storage.
+4. Make sure the target Neon database has actually had the migrations
+   applied and been seeded (see "Setup" above) — Vercel deploys the app,
+   not the schema; a fresh Neon project needs that done once, by hand,
+   before or after the first deploy.
 5. Deploy. Every push to `main` redeploys Production; every other branch/PR
    gets its own Preview URL automatically — no extra config.
 
@@ -343,6 +367,62 @@ Two paths, same destination (`works`, via review):
   (`workflow_dispatch`), or run the same commands locally: `npm run
   fetch-candidates -- <count>` / `npm run load-candidates -- <file>`, then
   `npm run review` to approve or reject each one.
+- **Recommended**: a signed-in reader submitting a work via `/recommend` —
+  see "Accounts" below. Lands in the exact same `content_candidates` queue
+  as everything else, `origin = 'user_submitted'`, reviewed the same way.
+
+## Accounts
+
+Entirely optional — see the `/privacy` page for the reader-facing version
+of this. Nothing about the daily rotation, Archive, or Shuffle changes
+whether you're signed in or not; an account only adds a private reading
+history and the ability to recommend a work.
+
+- **Auth**: [Auth.js v5](https://authjs.dev) (`next-auth@beta`) with Google
+  as the only provider — `lib/auth.ts`. Database sessions (not JWT): a
+  session can be revoked server-side by deleting its row, which a bare JWT
+  can't be. `@auth/neon-adapter` talks to Postgres through
+  `@neondatabase/serverless`'s `Pool` (a different client shape than
+  `lib/db.ts`'s `neon()` HTTP client used everywhere else — `lib/auth-db.ts`
+  wraps it in a Proxy that defers actually constructing the Pool, and
+  therefore touching `DATABASE_URL`, until a query happens at request time;
+  without that, `next build` would need the env var just to bundle a route
+  that imports `lib/auth.ts`, which every page does transitively through
+  `Masthead`).
+- **Schema**: `db/migrations/0005_accounts.sql` — `users` / `accounts` /
+  `sessions` / `verification_token` are the exact shape
+  `@auth/neon-adapter` expects (verified against its source, not just the
+  adapter docs). `users.role` (`reader` / `reviewer` / `admin`) gates the
+  review UI below — nobody self-assigns it; promoting a reader to reviewer
+  is a deliberate `update users set role = 'reviewer' where email = '...'`
+  run by hand.
+- **Reading history**: `reading_history` (user + work, unique, upserted on
+  re-read). `components/ReadingView.tsx` posts to
+  `app/api/reading-history/route.ts` on every mount, signed in or not — the
+  route itself checks the session and no-ops for anonymous requests, which
+  is what keeps ReadingView from needing a `SessionProvider` wrapped around
+  the app just for this one call. Shown back on `/account`.
+- **Recommendations**: `/recommend` posts to `app/api/recommend/route.ts`,
+  which requires a session and inserts directly into `content_candidates`
+  with `origin = 'user_submitted'` and `submitted_by` set to the reader's
+  id — columns that existed, unused, since `0002_scalable_schema.sql`. A
+  recommendation is deliberately a stub, not a ready candidate:
+  `text_content` stays null (there's no promise the submitter has verbatim,
+  sourced text), so `scripts/promote-candidate.ts` /
+  `lib/contentReview.ts` already refuse to promote it as-is — a reviewer
+  has to actually go find and verify the text first, same as any
+  mechanically-fetched candidate missing a description.
+- **Manual review UI**: `/admin/review` (list) and `/admin/review/[id]`
+  (detail — edit fields, promote, or reject), gated on
+  `role in ('reviewer', 'admin')`. This calls the exact same functions in
+  `lib/contentReview.ts` that `scripts/promote-candidate.ts` calls — the
+  CLI a human or the scheduled agent runs and the web UI a reviewer without
+  terminal access uses are two front ends on one set of rules, not two
+  copies that could drift apart.
+- **`source_url` is now nullable** on `content_candidates` (a
+  recommendation may not come with one), but promotion requires one before
+  a work can go live — enforced in `lib/contentReview.ts`, not left to a
+  database constraint alone.
 
 ## Author portraits
 

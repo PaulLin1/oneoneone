@@ -17,16 +17,40 @@ export default function PrivacyPage() {
       <div className="space-y-10 border-t border-black/15 pt-10 font-serif text-base leading-relaxed">
         <section>
           <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-            Privacy
+            Privacy — without an account
           </h2>
           <p className="mt-3">
-            There&apos;s no account to make, so there&apos;s nothing to store about you. The only
-            thing this site writes to your browser is a single entry in{" "}
-            <code className="font-sans text-sm">localStorage</code> caching today&apos;s selection,
-            so refreshing the page doesn&apos;t re-fetch it — that entry never leaves your device.
-            No analytics, no cookies, no tracking of what you&apos;ve read, no third-party
-            scripts. If you use the Share button, whatever you send is handled entirely by your
-            own device&apos;s share sheet or clipboard; nothing routes through this site.
+            An account is entirely optional (see below) — you never need one to read. Without
+            one, there&apos;s nothing to store about you. The only thing this site writes to your
+            browser is a single entry in <code className="font-sans text-sm">localStorage</code>{" "}
+            caching today&apos;s selection, so refreshing the page doesn&apos;t re-fetch it — that
+            entry never leaves your device. No analytics, no cookies, no tracking of what
+            you&apos;ve read, no third-party scripts. If you use the Share button, whatever you
+            send is handled entirely by your own device&apos;s share sheet or clipboard; nothing
+            routes through this site.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+            Privacy — with an account
+          </h2>
+          <p className="mt-3">
+            Making an account (Google sign-in only) is the one thing on this site that stores
+            something about you: your name, email, and Google profile image as returned by
+            Google, a session cookie so you stay signed in, and — from that point on — a record
+            of which works you open while signed in, shown back to you on your{" "}
+            <Link
+              href="/account"
+              className="text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-black"
+            >
+              account page
+            </Link>
+            . Nothing before you signed up is backfilled. A recommendation you submit is tied to
+            your account (so a reviewer can follow up on it) the same way. There&apos;s no
+            analytics platform and no third party involved beyond Google&apos;s own sign-in
+            flow — the data stays in this site&apos;s database, readable only by you and, for
+            recommendations, whoever reviews the queue.
           </p>
         </section>
 

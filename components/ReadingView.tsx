@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import { CATEGORY_ACCENT } from "@/lib/categoryColor";
 import { authorPortraitSrc } from "@/lib/authorPortraits";
 import type { Work } from "@/lib/types";
@@ -12,6 +15,19 @@ export function ReadingView({ work }: { work: Work }) {
   const isPoem = work.category === "poem";
   const accent = CATEGORY_ACCENT[work.category];
   const portraitSrc = authorPortraitSrc(work.author);
+
+  // Records reading history for signed-in readers only — the API no-ops
+  // for anonymous requests (see app/api/reading-history/route.ts), so this
+  // fires unconditionally rather than needing a client-side session check.
+  // Fires for every work viewed here, including archive reads, since both
+  // routes render through this same component.
+  useEffect(() => {
+    fetch("/api/reading-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workId: work.id }),
+    }).catch(() => {});
+  }, [work.id]);
 
   return (
     <article className={isPoem ? "mx-auto max-w-xl" : "mx-auto max-w-2xl"}>

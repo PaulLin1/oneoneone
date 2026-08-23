@@ -63,18 +63,18 @@ force-push or rewrite history on `main` — revert forward.
 ## Database changes
 
 - **Adding a migration**: new file in `db/migrations/`, numbered
-  sequentially (`0005_whatever.sql`), following the style of the existing
+  sequentially (`0006_whatever.sql`), following the style of the existing
   ones — a comment at the top explaining *why*, not just what. Apply it
   directly against the production Neon database:
   ```bash
-  psql "$DATABASE_URL" -f db/migrations/0005_whatever.sql
+  psql "$DATABASE_URL" -f db/migrations/0006_whatever.sql
   ```
   There's no separate staging database and no down-migrations — write
   migrations to be additive where possible (new nullable columns, new
   tables) so a mistake is easy to unwind by hand rather than requiring a
-  paired rollback script. `0003_curation_and_dedup.sql` and
-  `0004_author_portraits.sql` are both examples of purely additive
-  migrations against a live schema.
+  paired rollback script. `0003_curation_and_dedup.sql`,
+  `0004_author_portraits.sql`, and `0005_accounts.sql` are all examples of
+  purely additive migrations against a live schema.
 - **If you want a safety net before running something against production**:
   Neon supports branching a database (a cheap, instant copy-on-write
   clone) from the Neon console — create a branch, point a local
@@ -123,18 +123,55 @@ reviewer would do by hand — see "Automation" and "Content pipeline" in
   `ANTHROPIC_API_KEY`) missing or expired; check
   **Settings → Secrets and variables → Actions**.
 
+## Accounts & reviewers
+
+See "Accounts" in `README.md` for the architecture. Operationally:
+
+- **`AUTH_SECRET` should be set everywhere the app runs regardless** —
+  generate once with `npx auth secret`. Without it, `auth()` logs a
+  `MissingSecret` error on every single request (it still degrades to
+  "signed out" rather than crashing anything, but the error is real and
+  worth not having in the logs).
+- **Setting up Google sign-in** (separately, once you actually want it
+  working): create an OAuth client in Google Cloud Console (APIs &
+  Services → Credentials → Create OAuth client ID → Web application), add
+  `https://<your-domain>/api/auth/callback/google` (and the
+  `localhost:3000` equivalent for local dev) as an authorized redirect
+  URI, then set `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` wherever the app
+  runs (see the secrets table above). Everything else about the site,
+  including anonymous reading, works with none of this configured.
+- **Promoting someone to reviewer**: there's no self-service path by
+  design — they sign in once (which creates their `users` row), then:
+  ```bash
+  psql "$DATABASE_URL" -c "update users set role = 'reviewer' where email = 'someone@example.com';"
+  ```
+  They'll see `/admin/review` on their next page load. `'admin'` exists as
+  a role value but nothing in the app currently distinguishes it from
+  `'reviewer'` — reserved for whenever that distinction is actually needed.
+- **Demoting/removing a reviewer**: same `update`, back to `'reader'`.
+  Deleting their `users` row entirely (`delete from users where id =
+  '...'`) cascades to their `sessions`/`accounts`/`reading_history` rows
+  automatically (all declared `on delete cascade`); anything they
+  recommended stays in `content_candidates` with `submitted_by` set to
+  `null` (`on delete set null`) rather than disappearing.
+
 ## Secrets and environment variables
 
 | Variable | Where it lives | Used by |
 |---|---|---|
 | `DATABASE_URL` | `.env.local` (local dev, gitignored) · Vercel project env vars · GitHub Actions repo secret | The app at runtime · `content-pipeline.yml` · every `npm run` pipeline script |
 | `ANTHROPIC_API_KEY` | GitHub Actions repo secret only | `content-pipeline.yml`'s Claude Code agent step |
+| `AUTH_SECRET` | `.env.local` · Vercel project env vars | Auth.js session/cookie signing — set this everywhere regardless of whether sign-in is configured yet; generate with `npx auth secret` |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | `.env.local` · Vercel project env vars | Sign-in (`lib/auth.ts`) — genuinely optional; the app runs fine without these, sign-in just won't work |
+| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars | Author-portrait storage — optional; see the portrait pipeline docs |
 
 If the Neon connection string ever changes (new project, rotated
-credentials, moved to a different region), it has to be updated in **all
-three** places above — nothing propagates automatically between them.
-`.env.local.example` documents the shape of `DATABASE_URL` for local setup;
-it's never itself a real secret (no real value is committed).
+credentials, moved to a different region), it has to be updated
+everywhere it's listed above (local, Vercel, and — for `DATABASE_URL`
+specifically — GitHub Actions too) — nothing propagates automatically
+between them. `.env.local.example` documents the shape of every variable
+above for local setup; it's never itself a real secret (no real value is
+committed).
 
 ## Moving or re-platforming
 
