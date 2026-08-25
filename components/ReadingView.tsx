@@ -11,7 +11,26 @@ const CATEGORY_LABEL: Record<Work["category"], string> = {
   story: "Short Story",
 };
 
-export function ReadingView({ work }: { work: Work }) {
+/**
+ * `readDate` is which calendar slot this read counts toward — always the
+ * day it's actually opened (today, for every caller), never the day an
+ * archived work's selection is *from*. `source`/`sourceDate` carry that
+ * distinction instead: reading archive day N's pick today still counts
+ * toward today, tagged as `source: "archive", sourceDate: <day N's date>`
+ * so /account can show "from <date>" rather than presenting it as today's
+ * canonical pick.
+ */
+export function ReadingView({
+  work,
+  readDate,
+  source,
+  sourceDate,
+}: {
+  work: Work;
+  readDate: string;
+  source: "daily" | "random" | "archive";
+  sourceDate?: string;
+}) {
   const isPoem = work.category === "poem";
   const accent = CATEGORY_ACCENT[work.category];
 
@@ -19,20 +38,23 @@ export function ReadingView({ work }: { work: Work }) {
   // for anonymous requests (see app/api/reading-history/route.ts), so this
   // fires unconditionally rather than needing a client-side session check.
   // Fires for every work viewed here, including archive reads, since both
-  // routes render through this same component.
+  // routes render through this same component. A slot can hold more than
+  // one read now (see 0008) — this never overwrites a different work
+  // already logged for the same day/category, it only adds or, if it's
+  // the exact same work, bumps read_at.
   useEffect(() => {
     fetch("/api/reading-history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workId: work.id }),
+      body: JSON.stringify({ workId: work.id, date: readDate, source, sourceDate }),
     }).catch(() => {});
-  }, [work.id]);
+  }, [work.id, readDate, source, sourceDate]);
 
   return (
     <article className={isPoem ? "mx-auto max-w-xl" : "mx-auto max-w-2xl"}>
       <header className="mb-16 text-center">
         <span
-          className={`inline-block px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] ${accent.bg} ${accent.text}`}
+          className={`inline-block border-2 border-ink px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] ${accent.bg} ${accent.text}`}
         >
           {CATEGORY_LABEL[work.category]} · ~{work.reading_minutes} min
         </span>
@@ -42,7 +64,7 @@ export function ReadingView({ work }: { work: Work }) {
           authorName={work.author}
           accentBg={accent.bg}
           accentText={accent.text}
-          className="mx-auto mt-6 h-40 w-40 sm:h-48 sm:w-48"
+          className="mx-auto mt-6 h-40 w-40 border-2 border-ink sm:h-48 sm:w-48"
           initialSizeClassName="text-6xl sm:text-7xl"
         />
 

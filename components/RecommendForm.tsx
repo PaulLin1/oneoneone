@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CATEGORY_ACCENT } from "@/lib/categoryColor";
 import type { WorkCategory } from "@/lib/types";
 
 const CATEGORIES: { value: WorkCategory; label: string }[] = [
@@ -11,7 +12,7 @@ const CATEGORIES: { value: WorkCategory; label: string }[] = [
 ];
 
 const inputClass =
-  "w-full border border-black/20 bg-paper px-3 py-2 font-serif text-base placeholder:text-ink-soft/60 focus:border-ink focus:outline-none";
+  "w-full border-2 border-black/20 bg-paper px-3 py-2 font-serif text-base placeholder:text-ink-soft/60 focus:border-ink focus:outline-none";
 
 export function RecommendForm() {
   const [title, setTitle] = useState("");
@@ -55,6 +56,7 @@ export function RecommendForm() {
     <>
       <div className="mb-10">
         <h1 className="text-3xl tracking-tight sm:text-4xl">Recommend a work</h1>
+        <div className="mt-3 h-1.5 w-16 bg-yellow" aria-hidden="true" />
         <p className="mt-4 max-w-lg font-serif text-base leading-relaxed text-ink-soft">
           Every recommendation goes through the same review as anything else that reaches the
           catalog — public domain only, verified before it&apos;s ever published (see{" "}
@@ -100,18 +102,25 @@ export function RecommendForm() {
 
           <div>
             <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">Category</span>
-            <div className="mt-1.5 flex gap-4">
-              {CATEGORIES.map((c) => (
-                <label key={c.value} className="flex items-center gap-2 font-serif text-sm">
-                  <input
-                    type="radio"
-                    name="category"
-                    checked={category === c.value}
-                    onChange={() => setCategory(c.value)}
-                  />
-                  {c.label}
-                </label>
-              ))}
+            <div className="mt-1.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Category">
+              {CATEGORIES.map((c) => {
+                const accent = CATEGORY_ACCENT[c.value];
+                const selected = category === c.value;
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setCategory(c.value)}
+                    className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] transition-colors ${
+                      selected ? `${accent.bg} ${accent.text}` : "bg-black/5 text-ink-soft hover:text-ink"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -147,7 +156,7 @@ export function RecommendForm() {
           <button
             type="submit"
             disabled={status === "sending"}
-            className="bg-yellow px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80 disabled:opacity-50"
+            className="border-2 border-ink bg-yellow px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80 disabled:opacity-50"
           >
             {status === "sending" ? "Sending…" : "Submit"}
           </button>

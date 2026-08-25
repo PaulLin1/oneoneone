@@ -55,7 +55,13 @@
 }
 
 body {
-  background: var(--color-paper);
+  /* Ben-Day dot field — the flat color blocks read as "pop art" but the
+     bare white paper between them read as unfinished. A faint halftone
+     grid gives the paper texture without competing with content, the way
+     print pop art never actually left canvas untouched. */
+  background-color: var(--color-paper);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 18px 18px;
   color: var(--color-ink);
   font-weight: 500;
   color-scheme: light;

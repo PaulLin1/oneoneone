@@ -20,7 +20,7 @@ export async function Masthead() {
   const session = await auth();
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-ink bg-yellow px-6 sm:px-10">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b-2 border-ink bg-yellow px-6 sm:px-10">
       <Link href="/" className="-my-2 py-2 text-base tracking-tight">
         {/* One color per "one" — poem, essay, story, in that order, matching
             the app icon and every other category-color mapping in the app. */}
@@ -33,7 +33,7 @@ export async function Masthead() {
           Archive
         </Link>
         {session?.user ? (
-          <Link href="/account" className={`${CHIP} bg-purple text-white`}>
+          <Link href="/account" className={`${CHIP} bg-ink text-yellow`}>
             Account
           </Link>
         ) : (

@@ -10,7 +10,12 @@ export default function Home() {
 
   if (loading && !todaySelection) {
     return (
-      <main className="flex flex-1 items-center justify-center px-6 sm:px-10">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 sm:px-10">
+        <div className="flex gap-2" aria-hidden="true">
+          <span className="h-3 w-3 animate-pulse bg-blue [animation-delay:0ms]" />
+          <span className="h-3 w-3 animate-pulse bg-pink [animation-delay:150ms]" />
+          <span className="h-3 w-3 animate-pulse bg-purple [animation-delay:300ms]" />
+        </div>
         <p className="text-sm text-ink-soft">
           {isSlow
             ? "Still loading — the database is waking up, hang tight…"

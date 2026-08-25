@@ -38,6 +38,9 @@ export default async function ArchiveReadPage({
     <ReadingFlow
       work={work}
       category={category}
+      readDate={todayIso()}
+      source="archive"
+      sourceDate={date}
       backHref="/archive"
       backLabel="Archive"
       progressHrefs={{

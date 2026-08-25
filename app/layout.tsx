@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Masthead } from "@/components/Masthead";
 import { Footer } from "@/components/Footer";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Masthead />
         {children}
         <Footer />
+        <Analytics />
       </body>
     </html>
   );

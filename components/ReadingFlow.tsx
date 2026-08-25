@@ -14,6 +14,9 @@ import type { Work, WorkCategory } from "@/lib/types";
 export function ReadingFlow({
   work,
   category,
+  readDate,
+  source,
+  sourceDate,
   backHref,
   backLabel,
   progressHrefs,
@@ -21,6 +24,11 @@ export function ReadingFlow({
 }: {
   work: Work;
   category: WorkCategory;
+  /** Which calendar day this read counts toward — see ReadingView. */
+  readDate: string;
+  /** How this read happened — see ReadingView. */
+  source: "daily" | "random" | "archive";
+  sourceDate?: string;
   backHref: string;
   backLabel: string;
   progressHrefs: Record<WorkCategory, string>;
@@ -47,8 +55,8 @@ export function ReadingFlow({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto border-t border-black/15 py-10">
-        <ReadingView work={work} />
+      <div className="flex-1 overflow-y-auto border-t-2 border-ink py-10">
+        <ReadingView work={work} readDate={readDate} source={source} sourceDate={sourceDate} />
       </div>
     </main>
   );

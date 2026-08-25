@@ -59,7 +59,7 @@ different infrastructure, see `OPERATIONS.md`.
    cp .env.local.example .env.local
    ```
 
-2. Apply the schema (run migrations in order — `0001` through `0006`),
+2. Apply the schema (run migrations in order — `0001` through `0009`),
    either via `psql` or by pasting each file into the Neon SQL editor:
 
    ```bash
@@ -69,6 +69,9 @@ different infrastructure, see `OPERATIONS.md`.
    psql "$DATABASE_URL" -f db/migrations/0004_author_portraits.sql
    psql "$DATABASE_URL" -f db/migrations/0005_accounts.sql
    psql "$DATABASE_URL" -f db/migrations/0006_portrait_urls.sql
+   psql "$DATABASE_URL" -f db/migrations/0007_reading_calendar.sql
+   psql "$DATABASE_URL" -f db/migrations/0008_multi_read_calendar.sql
+   psql "$DATABASE_URL" -f db/migrations/0009_daily_singleton.sql
    ```
 
    `0002` is what actually defines the current schema (normalized authors/
@@ -81,7 +84,17 @@ different infrastructure, see `OPERATIONS.md`.
    reading history — see "Accounts" below; the app runs fully without ever
    configuring sign-in, this just needs the tables to exist. `0006` adds
    `authors.portrait_url` (the actual, published portrait) and joins it
-   through `works_feed` — see "Author portraits" below.
+   through `works_feed` — see "Author portraits" below. `0007` reshapes
+   `reading_history` from "have I ever read this work" into a per-(user,
+   category, day) calendar. `0008` lets a (user, category, day) slot hold
+   more than one read and records how each one happened (the day's official
+   pick, a shuffle, an archived day's pick read later, or something read
+   outside the site). `0009` makes `'daily'` a singleton per (user,
+   category, day) — a fresh daily-sourced read replaces the old one instead
+   of sitting beside it, since `selectDailyWorks()` is recomputed from the
+   live catalog on every request and can otherwise disagree with itself
+   partway through the same day — see "Reading history" under "Accounts"
+   below.
 
 3. Seed the content catalog from `seed/works.json`:
 
@@ -416,12 +429,40 @@ history and the ability to recommend a work.
   review UI below — nobody self-assigns it; promoting a reader to reviewer
   is a deliberate `update users set role = 'reviewer' where email = '...'`
   run by hand.
-- **Reading history**: `reading_history` (user + work, unique, upserted on
-  re-read). `components/ReadingView.tsx` posts to
-  `app/api/reading-history/route.ts` on every mount, signed in or not — the
-  route itself checks the session and no-ops for anonymous requests, which
-  is what keeps ReadingView from needing a `SessionProvider` wrapped around
-  the app just for this one call. Shown back on `/account`.
+- **Reading history**: `reading_history` is a log, not a single slot — a
+  (user, category, day) can hold several rows (0008), so reading that
+  day's official pick *and* a shuffle both show up rather than the second
+  silently overwriting the first. `read_date` is always the day a row was
+  actually opened, even for an archived day's pick read later — `source`
+  (`daily` / `random` / `archive` / `external`) records how it was read,
+  and `source_date` additionally carries *which* day an `'archive'` row's
+  selection is actually from, so `/account` can show "from `<date>`"
+  instead of presenting it as that day's canonical pick.
+  `components/ReadingView.tsx` posts to `app/api/reading-history/route.ts`
+  on every mount, signed in or not — the route itself checks the session
+  and no-ops for anonymous requests, which is what keeps ReadingView from
+  needing a `SessionProvider` wrapped around the app just for this one
+  call; reopening the exact same work in the same slot just bumps
+  `read_at` (the partial unique index on `(user_id, category, read_date,
+  work_id) where work_id is not null`), it doesn't duplicate. `'daily'` is
+  the one exception to "multiple reads coexist": it's a singleton per
+  (user, category, day) (0009's partial unique index on `(user_id,
+  category, read_date) where source = 'daily'`) — a fresh daily-sourced
+  read *replaces* whichever work was previously logged as that day's pick
+  rather than sitting beside it, because `selectDailyWorks()` is
+  recomputed from the live catalog on every request and can genuinely
+  disagree with itself between two visits on the same calendar day if the
+  active-works set changed in between. `/account`
+  renders this as a GitHub-contributions-style calendar
+  (`lib/readingCalendar.ts` builds the week grid, `components/
+  ReadingCalendar.tsx` renders it and each day's detail panel, one entry
+  per row with a Clear) going back `CALENDAR_WEEKS`
+  (`app/account/page.tsx`). Something read outside the site can be added
+  to any past or present slot via `app/api/reading-history/entry/route.ts`
+  (`PUT` to add, typed in by hand — `external_title`/`external_author`,
+  `work_id` left null; `DELETE` to remove one row by id). A row's source
+  is exactly a catalog work or external text, never both — enforced by
+  `reading_history_source_check`, not left to application code alone.
 - **Recommendations**: `/recommend` posts to `app/api/recommend/route.ts`,
   which requires a session and inserts directly into `content_candidates`
   with `origin = 'user_submitted'` and `submitted_by` set to the reader's

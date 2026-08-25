@@ -3,11 +3,13 @@ export default function AboutPage() {
     <main className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto px-6 py-16 sm:px-10 sm:py-20">
       <div className="mb-10">
         <h1 className="text-3xl tracking-tight sm:text-4xl">About</h1>
+        <div className="mt-3 h-1.5 w-16 bg-yellow" aria-hidden="true" />
       </div>
 
       <div className="space-y-10 border-t border-black/15 pt-10 font-serif text-base leading-relaxed">
         <section>
-          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+          <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
             The idea
           </h2>
           <p className="mt-3">
@@ -19,7 +21,8 @@ export default function AboutPage() {
         </section>
 
         <section>
-          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+          <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
             Ray Bradbury&apos;s thousand nights
           </h2>
           <p className="mt-3">
@@ -51,7 +54,8 @@ export default function AboutPage() {
         </section>
 
         <section>
-          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+          <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
             What we actually read
           </h2>
           <p className="mt-3">
@@ -67,7 +71,8 @@ export default function AboutPage() {
         </section>
 
         <section>
-          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+          <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
             Contact
           </h2>
           <p className="mt-3">
