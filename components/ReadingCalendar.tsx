@@ -265,7 +265,7 @@ export function ReadingCalendar({
           <p className="text-xs font-semibold uppercase tracking-[0.15em]">{formatDisplayDate(selectedDate)}</p>
         </div>
 
-        <div className="max-h-64 divide-y divide-black/10 overflow-y-auto px-4">
+        <div className="h-48 divide-y divide-black/10 overflow-y-auto px-4">
           {CATEGORIES.map((category) => {
             const entries = selectedEntries[category];
             const accent = CATEGORY_ACCENT[category];

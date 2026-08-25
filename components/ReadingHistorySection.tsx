@@ -41,40 +41,52 @@ export function ReadingHistorySection({
     // detail panel beside it could grow to match) just left a gap under
     // the calendar itself, since it has no more content to fill it with.
     // Each section takes only the height its own content needs; Overview
-    // sits right below Reading history instead of pinned to the bottom.
+    // sits above Reading history instead of pinned to the bottom.
+    // Both are real bordered cards (header bar + body) rather than a bare
+    // heading floating over content — that's what gives the page an
+    // actual visual structure instead of everything reading as one loose
+    // stack of elements.
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
-      <div className="flex shrink-0 flex-col gap-3">
-        <h2 className="shrink-0 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-          Reading history
-        </h2>
-        <ReadingCalendar today={today} weeks={weeks} rows={rows} onRowsChange={setRows} />
-      </div>
-
-      <div className="shrink-0 border-t border-black/15 pt-5">
-        <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">Overview</h2>
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
-          <div className="flex gap-8">
+      <section className="shrink-0 border border-black/15">
+        <div className="flex items-center gap-2 border-b border-black/15 px-5 py-3">
+          <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">Overview</h2>
+        </div>
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-6 sm:gap-8">
             <div>
               <p className="font-serif text-3xl leading-none">{stats.totalReads}</p>
               <p className="mt-1.5 text-[10px] uppercase tracking-[0.1em] text-ink-soft">Reads logged</p>
             </div>
-            <div>
+            <div className="border-l border-black/15 pl-6 sm:pl-8">
               <p className="font-serif text-3xl leading-none">{stats.daysActive}</p>
               <p className="mt-1.5 text-[10px] uppercase tracking-[0.1em] text-ink-soft">Days active</p>
             </div>
-            <div>
+            <div className="border-l border-black/15 pl-6 sm:pl-8">
               <p className="font-serif text-3xl leading-none">{stats.streak}</p>
               <p className="mt-1.5 text-[10px] uppercase tracking-[0.1em] text-ink-soft">Day streak</p>
             </div>
           </div>
           <Link
             href="/recommend"
-            className="text-xs font-semibold uppercase tracking-[0.15em] text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-black"
+            className="shrink-0 bg-yellow px-5 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80"
           >
-            Recommend a work →
+            Recommend a work
           </Link>
         </div>
-      </div>
+      </section>
+
+      <section className="shrink-0 border border-black/15">
+        <div className="flex items-center gap-2 border-b border-black/15 px-5 py-3">
+          <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
+            Reading history
+          </h2>
+        </div>
+        <div className="p-5">
+          <ReadingCalendar today={today} weeks={weeks} rows={rows} onRowsChange={setRows} />
+        </div>
+      </section>
     </div>
   );
 }
