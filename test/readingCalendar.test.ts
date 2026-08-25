@@ -1,6 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildReadingCalendar, type ReadingHistoryEntry } from "@/lib/readingCalendar";
+import { buildReadingCalendar, currentStreak, type ReadingHistoryEntry } from "@/lib/readingCalendar";
+
+function entry(date: string): ReadingHistoryEntry {
+  return {
+    id: date,
+    date,
+    category: "poem",
+    title: "T",
+    author: null,
+    workId: "w",
+    source: "daily",
+    sourceDate: null,
+  };
+}
 
 test("every week column has exactly 7 days", () => {
   const { weeks } = buildReadingCalendar("2026-08-23", 6, []);
@@ -118,4 +131,24 @@ test("requesting more weeks only grows the grid backward — today's column posi
   const lastSmall = small.weeks[small.weeks.length - 1];
   const lastBig = big.weeks[big.weeks.length - 1];
   assert.deepEqual(lastSmall, lastBig);
+});
+
+test("currentStreak counts consecutive days ending today", () => {
+  const rows = [entry("2026-08-23"), entry("2026-08-24"), entry("2026-08-25")];
+  assert.equal(currentStreak("2026-08-25", rows), 3);
+});
+
+test("currentStreak is 0 when today has nothing logged, even with a long run before it", () => {
+  const rows = [entry("2026-08-22"), entry("2026-08-23"), entry("2026-08-24")];
+  assert.equal(currentStreak("2026-08-25", rows), 0);
+});
+
+test("currentStreak stops at the first gap", () => {
+  const rows = [entry("2026-08-20"), entry("2026-08-24"), entry("2026-08-25")];
+  assert.equal(currentStreak("2026-08-25", rows), 2);
+});
+
+test("currentStreak ignores a day read out of order in the past — no retroactive extension", () => {
+  const rows = [entry("2026-08-25"), entry("2026-08-01")];
+  assert.equal(currentStreak("2026-08-25", rows), 1);
 });

@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { auth, signIn } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { SignOutForm } from "@/components/SignOutForm";
-import { ReadingCalendar } from "@/components/ReadingCalendar";
+import { ReadingHistorySection } from "@/components/ReadingHistorySection";
 import { todayIso } from "@/lib/dateMath";
 import type { ReadingHistoryEntry } from "@/lib/readingCalendar";
 
@@ -88,8 +87,8 @@ export default async function AccountPage() {
   }));
 
   return (
-    <main className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-y-auto px-6 py-6 sm:px-10 sm:py-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <main className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col overflow-hidden px-6 py-6 sm:px-10 sm:py-8">
+      <div className="mb-6 flex shrink-0 items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl tracking-tight sm:text-4xl">Account</h1>
           <div className="mt-3 h-1.5 w-16 bg-yellow" aria-hidden="true" />
@@ -103,20 +102,8 @@ export default async function AccountPage() {
         <SignOutForm />
       </div>
 
-      <div className="space-y-5 border-t border-black/15 pt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-            Reading history
-          </h2>
-          <Link
-            href="/recommend"
-            className="text-xs font-semibold uppercase tracking-[0.15em] text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-black"
-          >
-            Recommend a work →
-          </Link>
-        </div>
-
-        <ReadingCalendar today={today} weeks={CALENDAR_WEEKS} initialHistory={history} />
+      <div className="flex min-h-0 flex-1 flex-col border-t border-black/15 pt-6">
+        <ReadingHistorySection today={today} weeks={CALENDAR_WEEKS} initialHistory={history} />
       </div>
     </main>
   );

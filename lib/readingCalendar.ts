@@ -40,7 +40,7 @@ export type ReadingCalendarGrid = {
   monthLabels: MonthLabel[];
 };
 
-function addDaysIso(iso: string, days: number): string {
+export function addDaysIso(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
@@ -111,4 +111,21 @@ export function buildReadingCalendar(
   });
 
   return { weeks: weekColumns, monthLabels };
+}
+
+/**
+ * Consecutive days, ending at (and including) `today`, with at least one
+ * read logged — 0 if today itself has nothing yet. Only counts backward
+ * from today, same as a GitHub streak: reading archived days out of order
+ * doesn't retroactively extend it.
+ */
+export function currentStreak(today: string, rows: ReadingHistoryEntry[]): number {
+  const daysWithEntries = new Set(rows.map((r) => r.date));
+  let count = 0;
+  let cursor = today;
+  while (daysWithEntries.has(cursor)) {
+    count++;
+    cursor = addDaysIso(cursor, -1);
+  }
+  return count;
 }

@@ -51,10 +51,17 @@ export function ReadingView({
   }, [work.id, readDate, source, sourceDate]);
 
   return (
-    <article className={isPoem ? "mx-auto max-w-xl" : "mx-auto max-w-2xl"}>
-      <header className="mb-16 text-center">
+    // Below lg this is the original single centered column (badge, portrait,
+    // title, byline, body, source — in that order). From lg up, everything
+    // that's *about* the work — badge, portrait, title, byline, source —
+    // breaks out into a sticky sidebar, leaving the right side as nothing
+    // but the reading itself. Stretching the text column to fill the extra
+    // width would just make lines too long to read comfortably, so the
+    // width goes to that info panel instead.
+    <article className="mx-auto max-w-5xl lg:flex lg:items-start lg:gap-16">
+      <aside className="mb-10 flex flex-col items-center text-center lg:sticky lg:top-6 lg:mb-0 lg:w-64 lg:shrink-0 lg:items-start lg:text-left">
         <span
-          className={`inline-block border-2 border-ink px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] ${accent.bg} ${accent.text}`}
+          className={`inline-block px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] ${accent.bg} ${accent.text}`}
         >
           {CATEGORY_LABEL[work.category]} · ~{work.reading_minutes} min
         </span>
@@ -64,11 +71,11 @@ export function ReadingView({
           authorName={work.author}
           accentBg={accent.bg}
           accentText={accent.text}
-          className="mx-auto mt-6 h-40 w-40 border-2 border-ink sm:h-48 sm:w-48"
+          className="mt-6 h-40 w-40 border-2 border-ink sm:h-48 sm:w-48 lg:h-36 lg:w-36"
           initialSizeClassName="text-6xl sm:text-7xl"
         />
 
-        <h1 className="mt-6 font-serif text-3xl leading-tight sm:text-4xl">{work.title}</h1>
+        <h1 className="mt-6 font-serif text-3xl leading-tight sm:text-4xl lg:text-2xl">{work.title}</h1>
         <p className="mt-4 text-sm text-ink-soft">
           {work.author}
           {work.year ? ` · ${work.year}` : ""}
@@ -76,22 +83,8 @@ export function ReadingView({
         {work.author_note && (
           <p className="mt-2 font-serif text-sm italic text-ink-soft">{work.author_note}</p>
         )}
-      </header>
 
-      {isPoem ? (
-        <p className="whitespace-pre-line text-center font-serif text-lg leading-loose">
-          {work.text_content}
-        </p>
-      ) : (
-        <div className="prose prose-lg prose-reading mx-auto font-serif">
-          {work.text_content?.split("\n\n").map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
-        </div>
-      )}
-
-      <footer className="mt-16 border-t border-black/15 pt-8 text-center text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-ink-soft">
-        <p>
+        <p className="mt-6 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-ink-soft">
           Source:{" "}
           <a
             href={work.source_url}
@@ -103,7 +96,21 @@ export function ReadingView({
           </a>
           {work.public_domain ? " · Public domain" : ""}
         </p>
-      </footer>
+      </aside>
+
+      <div className={`${isPoem ? "max-w-xl" : "max-w-2xl"} mx-auto lg:mx-0 lg:min-w-0 lg:flex-1`}>
+        {isPoem ? (
+          <p className="whitespace-pre-line text-center font-serif text-lg leading-loose lg:text-left">
+            {work.text_content}
+          </p>
+        ) : (
+          <div className="prose prose-lg prose-reading mx-auto font-serif lg:mx-0">
+            {work.text_content?.split("\n\n").map((paragraph, i) => (
+              <p key={i}>{paragraph}</p>
+            ))}
+          </div>
+        )}
+      </div>
     </article>
   );
 }
