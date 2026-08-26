@@ -7,7 +7,7 @@ import type { ReadingHistoryEntry } from "@/lib/readingCalendar";
 
 // How far back the /account calendar reaches — a bit more than this in
 // practice, since buildReadingCalendar aligns outward to whole weeks.
-const CALENDAR_WEEKS = 26;
+const CALENDAR_WEEKS = 14;
 
 export default async function AccountPage() {
   const session = await auth();

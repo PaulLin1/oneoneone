@@ -33,6 +33,22 @@ export async function POST(request: Request) {
   const { title, authorName, category, sourceUrl, note } = parsed.data;
   const sql = getDb();
 
+  // A cheap, meaningful cap against a single account flooding the review
+  // queue — not volumetric abuse protection (that's Vercel's job), just a
+  // limit on how much unreviewed content one person can create per day.
+  const RECOMMEND_DAILY_LIMIT = 5;
+  const [{ count }] = (await sql`
+    select count(*)::int as count
+    from content_candidates
+    where submitted_by = ${session.user.id} and created_at > now() - interval '1 day'
+  `) as { count: number }[];
+  if (count >= RECOMMEND_DAILY_LIMIT) {
+    return Response.json(
+      { error: "You've hit today's recommendation limit — try again tomorrow." },
+      { status: 429 }
+    );
+  }
+
   // reviewer_notes carries the submitter's own note, clearly labeled as
   // such — description stays null rather than reusing this field for it,
   // since description is editorial copy a reviewer writes about the work

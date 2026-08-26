@@ -3,6 +3,7 @@ import { Newsreader } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Masthead } from "@/components/Masthead";
 import { Footer } from "@/components/Footer";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const literarySerif = Newsreader({
@@ -11,10 +12,26 @@ const literarySerif = Newsreader({
   style: ["normal", "italic"],
 });
 
+const TITLE = "oneoneone — one poem, one essay, one story";
+const DESCRIPTION =
+  "A daily set of three public-domain texts: one poem, one essay, one short story, the same for every reader.";
+
 export const metadata: Metadata = {
-  title: "oneoneone — one poem, one essay, one story",
-  description:
-    "A daily set of three public-domain texts: one poem, one essay, one short story, the same for every reader.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "oneoneone",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {

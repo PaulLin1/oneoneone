@@ -12,6 +12,10 @@ on:
 
 permissions:
   contents: write
+  # anthropics/claude-code-action needs this to fetch an OIDC token for its
+  # own auth — without it, the action fails immediately on "Requesting OIDC
+  # token..." before ever reaching the actual pipeline steps.
+  id-token: write
 
 jobs:
   run:

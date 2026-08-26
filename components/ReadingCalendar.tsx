@@ -30,7 +30,7 @@ const WEEKDAY_LABEL: Record<number, string> = { 1: "Mon", 3: "Wed", 5: "Fri" };
 function sourceLabel(entry: ReadingHistoryEntry): string {
   switch (entry.source) {
     case "daily":
-      return `Daily · ${formatDisplayDate(entry.date)}`;
+      return formatDisplayDate(entry.date);
     case "random":
       return "Shuffled";
     case "archive":

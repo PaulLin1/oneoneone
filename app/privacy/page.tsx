@@ -23,12 +23,14 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-3">
             You don&apos;t need an account to read oneoneone (see below). If you don&apos;t have
-            one, we don&apos;t store anything about you. The only thing saved is one entry in your
-            browser&apos;s <code className="font-sans text-sm">localStorage</code>, which caches
-            today&apos;s picks so a refresh doesn&apos;t re-fetch them. That entry never leaves
-            your device. We don&apos;t run analytics, cookies, read-tracking, or third-party
-            scripts. The Share button just uses your device&apos;s own share sheet or clipboard,
-            so nothing routes through us.
+            one, we don&apos;t store anything that identifies you. The only thing saved locally is
+            one entry in your browser&apos;s{" "}
+            <code className="font-sans text-sm">localStorage</code>, which caches today&apos;s
+            picks so a refresh doesn&apos;t re-fetch them. That entry never leaves your device. We
+            do use Vercel Analytics to see aggregate page-view counts, it doesn&apos;t use cookies
+            or track you individually, and we don&apos;t run anything else: no ad trackers, no
+            read-tracking, no other third-party scripts. The Share button just uses your
+            device&apos;s own share sheet or clipboard, so nothing routes through us.
           </p>
         </section>
 
@@ -48,10 +50,10 @@ export default function PrivacyPage() {
               account page
             </Link>
             . Nothing from before you signed up gets added retroactively. A work you recommend is
-            tied to your account too, so a reviewer can follow up if they have questions. We
-            don&apos;t run analytics or use any third-party tool beyond Google&apos;s sign-in.
-            The data stays in our database, visible only to you and, for recommendations, whoever
-            is reviewing the queue.
+            tied to your account too, so a reviewer can follow up if they have questions. Beyond
+            Google&apos;s sign-in and the aggregate Vercel Analytics described above, we don&apos;t
+            use any other third-party tool. The data stays in our database, visible only to you
+            and, for recommendations, whoever is reviewing the queue.
           </p>
         </section>
 
