@@ -7,10 +7,31 @@ name: Content pipeline
 # uncapped retry-per-author loop was the main reason a run could take 30+
 # minutes and burn far more tokens than the fetch+review work needed. See
 # "Automation" in README.md for the full picture.
+#
+# Also dispatchable in `fetch-only` mode by app/api/admin/fetch-candidates
+# — the "Fetch new candidates" button on /account tries the fast, free,
+# non-agent path first (npm run fetch-candidates, sampling seed/source-
+# pool.json directly), and only falls back to triggering this workflow
+# when that pool is empty, since finding genuinely new sources needs real
+# web search and judgment, not just sampling a fixed local list.
 on:
   schedule:
     - cron: "0 13 * * 1" # Mondays, 13:00 UTC
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: >-
+          full = fetch, discover, review, and promote/reject (the normal
+          weekly run). fetch-only = fetch + discover, then stop — leaves
+          everything staged for a human to review from /admin/review.
+          Used by the "Fetch new candidates" button on /account when the
+          pool comes up empty on the fast, free, non-agent path.
+        required: false
+        default: full
+        type: choice
+        options:
+          - full
+          - fetch-only
 
 permissions:
   contents: write
@@ -54,11 +75,20 @@ jobs:
           # bill with nothing to show for it.
           claude_args: '--model claude-sonnet-5 --max-budget-usd 2 --allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
           prompt: |
-            You're running the oneoneone content pipeline unattended, on a
-            schedule, standing in for the human reviewer this project's docs
-            describe. This is a recurring weekly job, not a one-shot — leave
-            work for next week rather than exhausting the budget on this
-            run. Author portraits are a separate workflow
+            You're running the oneoneone content pipeline unattended —
+            standing in for the human reviewer this project's docs describe.
+            Mode for this run: ${{ inputs.mode || 'full' }}
+              - full (the normal weekly run): do all 5 steps below,
+                including reviewing and promoting/rejecting.
+              - fetch-only (someone clicked "Fetch new candidates" on
+                /account and the pool was empty): do ONLY steps 1 and 2,
+                then stop. Do not review, promote, or reject anything —
+                leave it all as needs_review for a human to look at from
+                /admin/review. Still do step 4 (verify) and step 5 (commit)
+                if step 2 changed seed/source-pool.json.
+            Either way, this is a recurring job, not a one-shot — leave work
+            for next time rather than exhausting the budget on this run.
+            Author portraits are a separate workflow
             (author-portraits.yml); don't do that here even if you notice a
             gap.
 

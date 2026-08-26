@@ -4,11 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FetchCandidatesResult } from "@/lib/fetchCandidates";
 
+type FetchApiResponse = FetchCandidatesResult & { deeperSearchStarted: boolean; deeperSearchError?: string };
+
 /**
- * Same underlying work as `npm run fetch-candidates`, just triggered from
- * /account instead of a terminal — see app/api/admin/fetch-candidates.
- * Confirms first since it's a real action (network fetches, new DB rows),
- * not a free page navigation.
+ * Tries the fast, free, non-agent path first (see app/api/admin/
+ * fetch-candidates) — if the pool's exhausted, that route automatically
+ * falls back to starting content-pipeline.yml's real web-search discovery,
+ * which isn't instant, so this can't just show a result the way the fast
+ * path does; it has to say "started, check back."
  */
 export function FetchCandidatesButton() {
   const router = useRouter();
@@ -16,19 +19,29 @@ export function FetchCandidatesButton() {
   const [message, setMessage] = useState<string | null>(null);
 
   async function handleClick() {
-    if (!window.confirm("Fetch up to 7 new candidates of each category (poem/essay/story) from the source pool? This can take a minute or two.")) return;
+    if (
+      !window.confirm(
+        "Fetch up to 7 new candidates of each category (poem/essay/story)? If the local pool is empty, this starts a deeper web search in the background instead."
+      )
+    ) {
+      return;
+    }
     setPending(true);
     setMessage(null);
     try {
       const res = await fetch("/api/admin/fetch-candidates", { method: "POST" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Something went wrong.");
-      const { staged, failed } = body as FetchCandidatesResult;
-      setMessage(
-        staged.length > 0
-          ? `Staged ${staged.length} new candidate${staged.length === 1 ? "" : "s"}.${failed.length > 0 ? ` (${failed.length} failed.)` : ""}`
-          : "Nothing new to fetch."
-      );
+      const { staged, failed, deeperSearchStarted, deeperSearchError } = body as FetchApiResponse;
+      if (staged.length > 0) {
+        setMessage(
+          `Staged ${staged.length} new candidate${staged.length === 1 ? "" : "s"}.${failed.length > 0 ? ` (${failed.length} failed.)` : ""}`
+        );
+      } else if (deeperSearchStarted) {
+        setMessage("Local pool was empty — started a deeper search on GitHub Actions. Check back in a few minutes.");
+      } else {
+        setMessage(`Local pool was empty, and the deeper search couldn't start: ${deeperSearchError}`);
+      }
       router.refresh();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Something went wrong.");

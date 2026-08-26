@@ -1,7 +1,5 @@
 import { auth } from "@/lib/auth";
-
-const REPO = "PaulLin1/oneoneone";
-const WORKFLOW_FILE = "author-portraits.yml";
+import { dispatchWorkflow } from "@/lib/githubDispatch";
 
 /**
  * The "Fetch portraits" button on /account. This does NOT run the portrait
@@ -18,28 +16,7 @@ export async function POST() {
     return Response.json({ error: "Not authorized." }, { status: 403 });
   }
 
-  const token = process.env.GITHUB_DISPATCH_TOKEN;
-  if (!token) {
-    return Response.json(
-      { error: "GITHUB_DISPATCH_TOKEN isn't configured — see .env.local.example." },
-      { status: 500 }
-    );
-  }
-
-  const res = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/vnd.github+json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ ref: "main" }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    return Response.json({ error: `GitHub API returned ${res.status}: ${body || res.statusText}` }, { status: 502 });
-  }
-
-  return Response.json({ ok: true });
+  const result = await dispatchWorkflow("author-portraits.yml");
+  if ("error" in result) return Response.json(result, { status: 502 });
+  return Response.json(result);
 }
