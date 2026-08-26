@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { auth, signIn } from "@/lib/auth";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Solid color chips, not underlined text — the same flat-block language
 // already used everywhere else (category badges in CategoryColumn/
@@ -35,7 +34,6 @@ export async function Masthead() {
         <span className="text-purple">one</span>
       </Link>
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <ThemeToggle />
         <Link href="/archive" className={CHIP}>
           Archive
         </Link>

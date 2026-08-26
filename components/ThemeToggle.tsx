@@ -37,12 +37,31 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      // Fixed black/yellow, not the flip-prone ink/paper tokens — this chip
-      // sits on the masthead's always-yellow bar, same reasoning as the
-      // Archive/Account chips beside it (see the comment in Masthead.tsx).
-      className="-my-2 px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-yellow transition-opacity hover:opacity-70 sm:px-3 sm:text-xs bg-black"
+      // Icon, not text — deliberately inconspicuous, a courtesy for the
+      // rare visitor who wants to override the system preference the site
+      // already follows by default, not a feature to advertise.
+      className="flex items-center transition-colors hover:text-ink"
     >
-      {isDark ? "Light" : "Dark"}
+      {isDark ? (
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.3" />
+          <path
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.9 3.1l-1.06 1.06M4.16 11.84l-1.06 1.06M12.9 12.9l-1.06-1.06M4.16 4.16 3.1 3.1"
+          />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+          <path
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+            d="M14 9.8A6 6 0 1 1 6.2 2a4.7 4.7 0 0 0 7.8 7.8Z"
+          />
+        </svg>
+      )}
     </button>
   );
 }
