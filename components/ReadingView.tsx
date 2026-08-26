@@ -90,7 +90,7 @@ export function ReadingView({
             href={work.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink"
+            className="underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink"
           >
             {work.source_name}
           </a>

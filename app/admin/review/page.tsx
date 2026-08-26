@@ -28,11 +28,11 @@ export default async function ReviewQueuePage() {
       </div>
 
       {candidates.length === 0 ? (
-        <p className="border-t border-black/15 pt-10 font-serif text-sm text-ink-soft">
+        <p className="border-t border-ink/15 pt-10 font-serif text-sm text-ink-soft">
           Nothing waiting — the scheduled pipeline (or the next recommendation) will land here.
         </p>
       ) : (
-        <ul className="divide-y divide-black/10 border-t border-black/15">
+        <ul className="divide-y divide-ink/10 border-t border-ink/15">
           {candidates.map((c) => (
             <li key={c.id} className="py-4">
               <Link href={`/admin/review/${c.id}`} className="block hover:opacity-70">

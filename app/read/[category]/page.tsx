@@ -52,7 +52,7 @@ export default function ReadPage() {
         <button
           type="button"
           onClick={retry}
-          className="text-sm text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink-soft"
+          className="text-sm text-ink underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink-soft"
         >
           Try again
         </button>
@@ -64,7 +64,7 @@ export default function ReadPage() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
         <p className="text-sm text-ink-soft">No reading found for today.</p>
-        <Link href="/" className="text-sm text-ink underline decoration-black/20 underline-offset-4">
+        <Link href="/" className="text-sm text-ink underline decoration-ink/20 underline-offset-4">
           Back to today
         </Link>
       </main>

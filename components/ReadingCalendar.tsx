@@ -214,7 +214,7 @@ export function ReadingCalendar({
                             onClick={() => selectDate(day.date)}
                             aria-label={formatDisplayDate(day.date)}
                             className={`flex w-full overflow-hidden border transition-colors ${
-                              day.date === selectedDate ? "border-ink" : "border-black/10 hover:border-black/30"
+                              day.date === selectedDate ? "border-ink" : "border-ink/10 hover:border-ink/30"
                             }`}
                             style={{ height: ROW, gap: 1 }}
                           >
@@ -224,7 +224,7 @@ export function ReadingCalendar({
                                 <span
                                   key={category}
                                   aria-hidden="true"
-                                  className={`flex-1 ${read ? CATEGORY_ACCENT[category].bg : "bg-black/10"}`}
+                                  className={`flex-1 ${read ? CATEGORY_ACCENT[category].bg : "bg-ink/10"}`}
                                 />
                               );
                             })}
@@ -254,7 +254,7 @@ export function ReadingCalendar({
             </span>
           ))}
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 bg-black/10" aria-hidden="true" />
+            <span className="h-2.5 w-2.5 bg-ink/10" aria-hidden="true" />
             Not logged
           </span>
         </div>
@@ -265,7 +265,7 @@ export function ReadingCalendar({
           <p className="text-xs font-semibold uppercase tracking-[0.15em]">{formatDisplayDate(selectedDate)}</p>
         </div>
 
-        <div className="h-48 divide-y divide-black/10 overflow-y-auto px-4">
+        <div className="h-48 divide-y divide-ink/10 overflow-y-auto px-4">
           {CATEGORIES.map((category) => {
             const entries = selectedEntries[category];
             const accent = CATEGORY_ACCENT[category];
@@ -292,7 +292,7 @@ export function ReadingCalendar({
                               {entry.workId ? (
                                 <Link
                                   href={`/work/${entry.workId}`}
-                                  className="block truncate font-serif text-sm underline decoration-black/20 underline-offset-4 hover:decoration-black"
+                                  className="block truncate font-serif text-sm underline decoration-ink/20 underline-offset-4 hover:decoration-ink"
                                 >
                                   {entry.title}
                                 </Link>
@@ -307,7 +307,7 @@ export function ReadingCalendar({
                               type="button"
                               disabled={pending === entry.id}
                               onClick={() => handleClear(entry.id)}
-                              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-black/20 underline-offset-4 transition-colors hover:text-pink disabled:opacity-50"
+                              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-pink disabled:opacity-50"
                             >
                               Clear
                             </button>
@@ -325,7 +325,7 @@ export function ReadingCalendar({
                         setExtAuthor("");
                         setError(null);
                       }}
-                      className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink disabled:opacity-50"
+                      className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink disabled:opacity-50"
                     >
                       + Outside read
                     </button>
@@ -336,13 +336,13 @@ export function ReadingCalendar({
                           value={extTitle}
                           onChange={(e) => setExtTitle(e.target.value)}
                           placeholder="Title"
-                          className="min-w-0 flex-1 border-2 border-black/20 bg-paper px-2.5 py-1.5 font-serif text-sm focus:border-ink focus:outline-none"
+                          className="min-w-0 flex-1 border-2 border-ink/20 bg-paper px-2.5 py-1.5 font-serif text-sm focus:border-ink focus:outline-none"
                         />
                         <input
                           value={extAuthor}
                           onChange={(e) => setExtAuthor(e.target.value)}
                           placeholder="Author (optional)"
-                          className="min-w-0 flex-1 border-2 border-black/20 bg-paper px-2.5 py-1.5 font-serif text-sm focus:border-ink focus:outline-none"
+                          className="min-w-0 flex-1 border-2 border-ink/20 bg-paper px-2.5 py-1.5 font-serif text-sm focus:border-ink focus:outline-none"
                         />
                         <button
                           type="button"

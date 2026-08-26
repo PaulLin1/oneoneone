@@ -194,7 +194,7 @@ only ever surfaces as a runtime error on a page load, never a failed build.
 
 ## Automation
 
-Two GitHub Actions workflows. Both need a one-time setup step in
+Three GitHub Actions workflows. All three need a one-time setup step in
 **Settings → Secrets and variables → Actions** — after that, nothing here
 needs a human to run anything.
 
@@ -205,32 +205,47 @@ needs a human to run anything.
   and GitHub Actions dependencies, gated by `ci.yml` like any other PR
   before merging. Next/React/`eslint-config-next` are grouped into one PR
   since they need to move together.
-- **`.github/workflows/content-pipeline.yml`** — the actual content and
-  author-portrait pipeline, running unattended on a weekly schedule
-  (Mondays, also triggerable by hand from the Actions tab). This isn't a
-  mechanical script: it runs a real Claude Code agent
-  (`anthropics/claude-code-action`) inside the workflow, doing exactly what
-  a human reviewer would — fetch candidates, read and judge each one
-  against the sourcing/rights/quality rules in this file and
-  `seed/README.md`, promote or reject, then find any author still missing
-  a portrait and run + visually QA that pipeline too. The full prompt is in
-  the workflow file itself. Needs `DATABASE_URL`, `ANTHROPIC_API_KEY` (an
-  Anthropic API key from console.anthropic.com, scoped to whatever spend
-  limit you're comfortable with — each run consumes real API usage), and
-  the `R2_*` secrets if you want it able to publish real portraits rather
-  than falling back to initials for every new author (see "Author
-  portraits" below).
+- **`.github/workflows/content-pipeline.yml`** — fetches and reviews new
+  candidates, running unattended on a weekly schedule (Mondays, also
+  triggerable by hand from the Actions tab). This isn't a mechanical
+  script: it runs a real Claude Code agent (`anthropics/claude-code-action`)
+  inside the workflow, doing exactly what a human reviewer would — fetch
+  candidates, read and judge each one against the sourcing/rights/quality
+  rules in this file and `seed/README.md`, promote or reject. The full
+  prompt is in the workflow file itself, and it's deliberately capped
+  (candidates per run, web searches per run) so a normal run stays short.
+  It's also pinned to Sonnet and given a hard `--max-budget-usd` ceiling —
+  not just a "should stay small" prompt instruction, an actual spend limit
+  the CLI enforces — plus a `timeout-minutes` on the job as a second,
+  independent backstop. See the comments in the workflow file if you're
+  tuning any of those numbers. Needs `DATABASE_URL` and `ANTHROPIC_API_KEY`
+  (an Anthropic API key from console.anthropic.com, scoped to whatever
+  spend limit you're comfortable with — each run consumes real API usage
+  regardless of the per-run cap above).
+- **`.github/workflows/author-portraits.yml`** — fills in missing author
+  portraits, split into its own workflow from the above because portrait
+  hunting (web search, image processing, and looking at every attempt with
+  the Read tool) is the expensive part of this whole pipeline and doesn't
+  need to happen every week. Runs monthly (1st of the month), also
+  triggerable by hand. Capped at 3 authors and 2 attempts per author per
+  run — leftover authors just get picked up next month; the initial-letter
+  fallback in `components/AuthorMark.tsx` covers the gap in the meantime.
+  Same Sonnet pin, `--max-budget-usd`, and `timeout-minutes` backstops as
+  `content-pipeline.yml` above. Needs `DATABASE_URL`, `ANTHROPIC_API_KEY`,
+  and the `R2_*` secrets (see
+  "Author portraits" below) — without `R2_*` it has nothing to publish to,
+  so don't bother enabling this one until those are set.
 
-  **To check on it**: the Actions tab shows each run's log directly, same
-  as `ci.yml`. Nothing it does is silent or hidden — promotions/rejections
-  show up as normal `npm run review` output in the log, portrait
-  publishes as normal `npm run publish-author-portrait` output, and any
-  *files* it changed (usually just `seed/source-pool.json`, if anything —
-  portraits publish straight to R2/the database now, no file involved)
-  land in a normal commit to `main` you can read like any other.
+  **To check on either**: the Actions tab shows each run's log directly,
+  same as `ci.yml`. Nothing they do is silent or hidden — promotions/
+  rejections show up as normal `npm run review` output in the log,
+  portrait publishes as normal `npm run publish-author-portrait` output,
+  and any *files* changed (usually just `seed/source-pool.json`, if
+  anything — portraits publish straight to R2/the database, no file
+  involved) land in a normal commit to `main` you can read like any other.
 
-  **To intervene**: nothing about this workflow prevents also running any
-  of the underlying commands (`npm run review`, `npm run
+  **To intervene**: nothing about either workflow prevents also running
+  any of the underlying commands (`npm run review`, `npm run
   fetch-author-portrait`, etc.) by hand against the same database — the
   agent isn't doing anything a human couldn't do with the same scripts. If
   a specific promotion or portrait looks wrong, fix or revert it the same

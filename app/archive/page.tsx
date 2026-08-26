@@ -27,7 +27,7 @@ export default async function ArchivePage() {
       </div>
 
       {days.length === 0 ? (
-        <p className="border-t border-black/15 pt-8 text-sm text-ink-soft">
+        <p className="border-t border-ink/15 pt-8 text-sm text-ink-soft">
           No past days yet — check back tomorrow.
         </p>
       ) : (
@@ -37,7 +37,7 @@ export default async function ArchivePage() {
         // list stranded in a sea of white on a wide screen.
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...days].reverse().map(({ day, date, works }) => (
-            <li key={day} className="border border-black/15 p-5">
+            <li key={day} className="border border-ink/15 p-5">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="text-sm font-semibold">No. {day}</span>
                 <span className="text-xs text-ink-soft">{formatDisplayDate(date)}</span>
@@ -49,7 +49,7 @@ export default async function ArchivePage() {
                     <li key={work.category}>
                       <Link
                         href={`/archive/${day}/${work.category}`}
-                        className="-mx-2 flex items-center gap-2.5 px-2 py-1 text-sm text-ink-soft transition-colors hover:bg-black/5 hover:text-ink"
+                        className="-mx-2 flex items-center gap-2.5 px-2 py-1 text-sm text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink"
                       >
                         <span
                           className={`w-12 shrink-0 px-1.5 py-0.5 text-center text-[0.6rem] font-semibold uppercase tracking-[0.15em] ${accent.bg} ${accent.text}`}

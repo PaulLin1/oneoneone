@@ -12,7 +12,7 @@ const CATEGORIES: { value: WorkCategory; label: string }[] = [
 ];
 
 const inputClass =
-  "w-full border-2 border-black/20 bg-paper px-3 py-2 font-serif text-base placeholder:text-ink-soft/60 focus:border-ink focus:outline-none";
+  "w-full border-2 border-ink/20 bg-paper px-3 py-2 font-serif text-base placeholder:text-ink-soft/60 focus:border-ink focus:outline-none";
 
 export function RecommendForm() {
   const [title, setTitle] = useState("");
@@ -60,7 +60,7 @@ export function RecommendForm() {
         <p className="mt-4 max-w-lg font-serif text-base leading-relaxed text-ink-soft">
           Every recommendation goes through the same review as anything else that reaches the
           catalog — public domain only, verified before it&apos;s ever published (see{" "}
-          <Link href="/about" className="underline decoration-black/20 underline-offset-4 hover:text-ink">
+          <Link href="/about" className="underline decoration-ink/20 underline-offset-4 hover:text-ink">
             About
           </Link>
           ). A link to a Gutenberg or Wikisource edition speeds that up a lot, but isn&apos;t
@@ -69,11 +69,11 @@ export function RecommendForm() {
       </div>
 
       {status === "sent" ? (
-        <p className="border-t border-black/15 pt-10 font-serif text-base">
+        <p className="border-t border-ink/15 pt-10 font-serif text-base">
           Sent — thank you. It&apos;s in the review queue now.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5 border-t border-black/15 pt-10">
+        <form onSubmit={handleSubmit} className="space-y-5 border-t border-ink/15 pt-10">
           <div>
             <label htmlFor="title" className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
               Title
@@ -114,7 +114,7 @@ export function RecommendForm() {
                     aria-checked={selected}
                     onClick={() => setCategory(c.value)}
                     className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.15em] transition-colors ${
-                      selected ? `${accent.bg} ${accent.text}` : "bg-black/5 text-ink-soft hover:text-ink"
+                      selected ? `${accent.bg} ${accent.text}` : "bg-ink/5 text-ink-soft hover:text-ink"
                     }`}
                   >
                     {c.label}

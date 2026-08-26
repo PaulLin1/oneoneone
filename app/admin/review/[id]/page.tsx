@@ -14,7 +14,7 @@ import {
   type RightsStatus,
 } from "@/lib/contentReview";
 
-const inputClass = "w-full border border-black/20 bg-paper px-3 py-2 font-serif text-sm focus:border-ink focus:outline-none";
+const inputClass = "w-full border border-ink/20 bg-paper px-3 py-2 font-serif text-sm focus:border-ink focus:outline-none";
 const labelClass = "text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft";
 
 async function requireReviewer() {
@@ -89,11 +89,11 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
         </p>
       </div>
 
-      <section className="mb-10 max-h-64 overflow-y-auto border border-black/15 bg-black/[0.02] p-4 font-serif text-sm leading-relaxed whitespace-pre-line">
+      <section className="mb-10 max-h-64 overflow-y-auto border border-ink/15 bg-ink/[0.02] p-4 font-serif text-sm leading-relaxed whitespace-pre-line">
         {candidate.text_content ?? "(no text yet — this came in as a recommendation with no source fetched)"}
       </section>
 
-      <form action={saveEdit} className="mb-10 space-y-4 border-t border-black/15 pt-8">
+      <form action={saveEdit} className="mb-10 space-y-4 border-t border-ink/15 pt-8">
         <h2 className={labelClass}>Edit</h2>
         <div>
           <label className={labelClass}>Description</label>
@@ -127,12 +127,12 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
           <label className={labelClass}>Source URL</label>
           <input name="sourceUrl" defaultValue={candidate.source_url ?? ""} className={`mt-1 ${inputClass}`} />
         </div>
-        <button type="submit" className="bg-black/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-black/10">
+        <button type="submit" className="bg-ink/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-ink/10">
           Save
         </button>
       </form>
 
-      <div className="grid gap-8 border-t border-black/15 pt-8 sm:grid-cols-2">
+      <div className="grid gap-8 border-t border-ink/15 pt-8 sm:grid-cols-2">
         <form action={doPromote} className="space-y-3">
           <h2 className={labelClass}>Promote</h2>
           <select name="era" required defaultValue="" className={inputClass}>
@@ -165,7 +165,7 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
         <form action={doReject} className="space-y-3">
           <h2 className={labelClass}>Reject</h2>
           <textarea name="notes" rows={3} placeholder="Reason (kept for the record)" className={inputClass} />
-          <button type="submit" className="border border-black/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-black/5">
+          <button type="submit" className="border border-ink/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-ink/5">
             Reject
           </button>
         </form>

@@ -102,7 +102,7 @@ export default async function AccountPage() {
         <SignOutForm />
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col border-t border-black/15 pt-6">
+      <div className="flex min-h-0 flex-1 flex-col border-t border-ink/15 pt-6">
         <ReadingHistorySection today={today} weeks={CALENDAR_WEEKS} initialHistory={history} />
       </div>
     </main>

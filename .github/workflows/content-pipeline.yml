@@ -1,10 +1,12 @@
 name: Content pipeline
 
-# Runs the whole content + author-portrait pipeline unattended: fetch new
-# candidates, review/promote or reject them, fill in any missing author
-# portraits — all the judgment calls a human reviewer would normally make,
-# done by a Claude Code agent instead. See "Automation" in README.md for
-# the full picture (what runs, what secrets it needs, how to check on it).
+# Fetches and reviews new content candidates unattended — all the judgment
+# calls a human reviewer would normally make, done by a Claude Code agent
+# instead. Author portraits are a separate, less-frequent workflow
+# (author-portraits.yml) — that part used to live here too, but its
+# uncapped retry-per-author loop was the main reason a run could take 30+
+# minutes and burn far more tokens than the fetch+review work needed. See
+# "Automation" in README.md for the full picture.
 on:
   schedule:
     - cron: "0 13 * * 1" # Mondays, 13:00 UTC
@@ -20,6 +22,9 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
+    # Independent of --max-budget-usd below — if the action ever fails to
+    # honor that flag, this is the backstop that still kills a runaway run.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -40,31 +45,51 @@ jobs:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
+          # --model: this is rule-following work (explicit criteria, no
+          # open-ended design judgment) — Sonnet is plenty, and costs a
+          # fraction of whatever the action's own default is.
+          # --max-budget-usd: a hard ceiling. Every other cap in this prompt
+          # is a *should*; this is the actual backstop if the agent goes off
+          # the rails anyway — it stops mid-run rather than running up a
+          # bill with nothing to show for it.
+          claude_args: '--model claude-sonnet-5 --max-budget-usd 2 --allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
           prompt: |
             You're running the oneoneone content pipeline unattended, on a
             schedule, standing in for the human reviewer this project's docs
-            describe. Read README.md's "Content pipeline" and "Author
-            portraits" sections and seed/README.md in full before doing
-            anything — they define the sourcing rules, the rights/PD bar,
-            and the quality bar. Follow them exactly; do not relax them
-            because no one's watching. When in doubt about rights or
-            quality, reject/skip rather than force something live.
+            describe. This is a recurring weekly job, not a one-shot — leave
+            work for next week rather than exhausting the budget on this
+            run. Author portraits are a separate workflow
+            (author-portraits.yml); don't do that here even if you notice a
+            gap.
 
-            1. Fetch: run `npm run fetch-candidates -- 5`.
+            Read ONLY these before starting, not the rest of README.md: the
+            "Content pipeline" section (grep README.md for "^## Content
+            pipeline", read from there to the next "^## " heading) and
+            seed/README.md in full. They define the sourcing rules, the
+            rights/PD bar, and the quality bar. Follow them exactly; do not
+            relax them because no one's watching. When in doubt about
+            rights or quality, reject/skip rather than force something
+            live.
+
+            1. Fetch: run `npm run fetch-candidates -- 3`. (Deliberately
+               small — each one gets its full text read in step 3, and that
+               text stays in this session's context for every step after
+               it. Fewer, more often, costs less per run than a big batch.)
 
             2. If that staged nothing new (pool exhausted or everything's
-               already known), grow seed/source-pool.json yourself: use
-               WebSearch/WebFetch to find a handful of well-known,
-               pre-1930-published poems/essays/short stories on Gutenberg,
-               Wikisource, or Standard Ebooks that aren't already in
-               seed/works.json or seed/source-pool.json. Verify each URL
+               already known), grow seed/source-pool.json yourself — but
+               capped: at most 3 WebSearch calls and at most 5 verified
+               URLs added, then move on regardless of how it went. Look for
+               well-known, pre-1930-published poems/essays/short stories on
+               Gutenberg, Wikisource, or Standard Ebooks that aren't already
+               in seed/works.json or seed/source-pool.json. Verify each URL
                actually resolves to the single work itself (not an index or
                a scanned-page-transclusion Wikisource page — see
                ROADMAP.md's "Pool-growth bottleneck" note on why those get
-               skipped). Add verified entries to seed/source-pool.json, or
-               if you already have the full verbatim text in hand from
-               fetching it, stage it directly via a batch JSON file and
+               skipped) with one WebFetch each, not several. Add verified
+               entries to seed/source-pool.json, or if you already have the
+               full verbatim text in hand from fetching it, stage it
+               directly via a batch JSON file and
                `npm run load-candidates -- <file>` — then delete that batch
                file once loaded, same as any other scratch file.
 
@@ -92,56 +117,20 @@ jobs:
                  can't actually confirm public-domain status for:
                  `npm run review -- reject <id> "reason"`.
 
-            4. Author portraits: find any author on an approved work whose
-               authors.portrait_url is still null (`select name from
-               authors a join works w on w.author_id = a.id where
-               w.status = 'approved' and a.portrait_url is null`, or just
-               eyeball it — there aren't many). The goal is 100% real-photo
-               coverage, not "try once and fall back to an initial" — the
-               initial-letter fallback in components/AuthorMark.tsx exists
-               for the brief window before a portrait is ready, not as an
-               acceptable permanent state, so don't stop at the first
-               attempt if it doesn't work:
-               - `npm run fetch-author-portrait -- "Name"`, then
-                 `npm run process-author-portraits`, then actually look at
-                 the resulting public/authors/_staging/<slug>.png with the
-                 Read tool.
-               - If it's genuinely legible (a real recognizable face, not a
-                 tiny sliver, not noise-eaten, correct crop), publish it:
-                 `npm run publish-author-portrait -- "Name"` (uploads to
-                 R2, sets authors.portrait_url, no commit involved).
-               - If it's not: don't give up after one try. Query Wikimedia
-                 Commons directly for alternates —
-                 `curl -s -G "https://commons.wikimedia.org/w/api.php" --data-urlencode "action=query" --data-urlencode "generator=search" --data-urlencode "gsrsearch=<Author Name> portrait -statue -stamp" --data-urlencode "gsrnamespace=6" --data-urlencode "gsrlimit=8" --data-urlencode "prop=imageinfo" --data-urlencode "iiprop=url|size" --data-urlencode "format=json" -H "User-Agent: oneoneone/1.0"`
-                 — prefer engravings/etchings over paintings or busy photos
-                 (they threshold far more reliably), and a plain background
-                 over an environmental/candid shot. Download a candidate
-                 straight into public/authors/_source/<slug>.<ext> with
-                 curl (matching the User-Agent convention in
-                 fetch-author-portrait.ts) and re-run process. If the
-                 source photo has the subject small against a lot of
-                 clutter, pre-crop it tightly to just the head/shoulders
-                 with sharp before processing rather than relying on
-                 process-author-portraits.ts's own content-detection to
-                 find it — this alone fixes most failures. It's fine to
-                 spend several attempts per author; this step matters more
-                 than moving fast.
-               - Only actually give up (leave portrait_url null) after a
-                 real effort — a memorial statue or a subject truly too
-                 obscured to ever crop cleanly, not just "the first image
-                 didn't work."
+            4. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
+               `npm test`, `npm run build` must all pass clean. Redirect
+               each to a file and only read the tail if it fails (e.g.
+               `npm run build > /tmp/build.log 2>&1 || tail -60
+               /tmp/build.log`) — a clean run's full output has no judgment
+               call in it, just tokens.
 
-            5. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
-               `npm test`, `npm run build` must all pass clean.
+            5. Commit whatever *files* changed (seed/source-pool.json is
+               the only one now) with a clear message describing what was
+               added/rejected, and push to main. All the database writes
+               (promote/reject) already happened live when you ran those
+               commands — this commit, if there's anything to commit at
+               all, is only for files.
 
-            6. Commit whatever *files* changed (seed/source-pool.json is
-               the main one now — portraits publish straight to R2/the
-               database, no file to commit) with a clear message describing
-               what was added/rejected, and push to main. All the database
-               writes (promote/reject/publish) already happened live when
-               you ran those commands — this commit, if there's anything to
-               commit at all, is only for files.
-
-            If a step finds nothing to do (no new candidates, no missing
-            portraits), that's a normal, successful run — just say so and
-            stop; don't force work that isn't there.
+            If a step finds nothing to do (no new candidates), that's a
+            normal, successful run — just say so and stop; don't force work
+            that isn't there.

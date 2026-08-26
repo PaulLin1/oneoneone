@@ -46,7 +46,7 @@ export function ReadingFlow({
             <button
               type="button"
               onClick={shuffle.isRandomized ? shuffle.onReset : shuffle.onShuffle}
-              className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink"
+              className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink"
             >
               {shuffle.isRandomized ? "Back to today's pick" : "Shuffle"}
             </button>

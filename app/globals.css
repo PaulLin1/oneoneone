@@ -35,9 +35,29 @@
   --color-blue: #189fd5;
   --color-pink: #d7157e;
   --color-purple: #a038c2;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.25);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.45);
 }
 
-/* White is the fixed identity, not a light-mode default — no dark-mode flip. */
+/*
+  Only the page canvas (paper/ink/ink-soft) flips — the brand marks (the
+  yellow masthead bar, category colors, CTA buttons on bg-yellow) are a
+  fixed identity in both modes, same as the "don't reuse category colors"
+  rule elsewhere in this file. Applied as a class (not prefers-color-scheme
+  alone) so an explicit toggle can override the system preference; see
+  components/ThemeToggle.tsx and the no-flash script in app/layout.tsx.
+*/
+.dark {
+  --color-paper: var(--color-near-black);
+  --color-ink: #f4f3ee;
+  --color-ink-soft: #a3a19b;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.3);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
+}
+
+.dark body {
+  color-scheme: dark;
+}
 
 @theme inline {
   --color-paper: var(--color-paper);
@@ -83,7 +103,7 @@ button:focus-visible {
 /* Thin, square scrollbars — no rounded pill, matching the rest of the UI. */
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -96,11 +116,11 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: var(--scrollbar-thumb);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.45);
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 /* Auto-scrolling title (components/ScrollingTitle.tsx) — two copies of the

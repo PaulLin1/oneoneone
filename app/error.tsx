@@ -24,7 +24,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         </button>
         <Link
           href="/"
-          className="border border-black/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:border-black"
+          className="border border-ink/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:border-ink"
         >
           Back to today
         </Link>

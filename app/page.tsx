@@ -34,7 +34,7 @@ export default function Home() {
         <button
           type="button"
           onClick={retry}
-          className="text-sm text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:text-ink-soft"
+          className="text-sm text-ink underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink-soft"
         >
           Try again
         </button>

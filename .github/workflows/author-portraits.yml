@@ -1,0 +1,110 @@
+name: Author portraits
+
+# Split out of content-pipeline.yml: portrait-hunting (WebSearch/WebFetch,
+# image processing, and vision-based QA on every attempt) was by far the
+# most expensive part of that job and had no cap on retries per author,
+# which is why a single content run could run 30+ minutes and burn far
+# more tokens than the fetch+review work actually needed. This runs on its
+# own, less frequent schedule and caps both authors-per-run and
+# attempts-per-author explicitly. See "Author portraits" in README.md for
+# the full picture.
+on:
+  schedule:
+    - cron: "0 13 1 * *" # 1st of the month, 13:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    # Independent of --max-budget-usd below — if the action ever fails to
+    # honor that flag, this is the backstop that still kills a runaway run.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: anthropics/claude-code-action@v1
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # See content-pipeline.yml's comment on these two flags — same
+          # reasoning, slightly higher budget since image reads (checking
+          # each staged portrait) cost more per call than plain text.
+          claude_args: '--model claude-sonnet-5 --max-budget-usd 3 --allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
+          prompt: |
+            You're filling in missing author portraits for oneoneone,
+            unattended, on a schedule. This is a recurring monthly job —
+            leave the rest for next month rather than exhausting the budget
+            on this run. Read README.md's "Author portraits" section before
+            starting (grep for "^## Author portraits", read from there to
+            the next "^## " heading or end of file) — nothing else in
+            README.md is relevant to this task, don't read the rest of it.
+
+            1. Find authors missing a portrait:
+               `select name from authors a join works w on w.author_id = a.id
+               where w.status = 'approved' and a.portrait_url is null`.
+               Handle at most 3 authors this run, oldest-approved-work
+               first. Leaving some for next month is fine and expected —
+               components/AuthorMark.tsx's initial-letter fallback exists
+               exactly for this gap, it's not broken in the meantime.
+
+            2. For each author, at most 2 attempts total, then move on
+               regardless of outcome (success or not):
+               - Attempt 1: `npm run fetch-author-portrait -- "Name"`, then
+                 `npm run process-author-portraits`, then look at the
+                 resulting public/authors/_staging/<slug>.png with the Read
+                 tool.
+               - If it's genuinely legible (a real recognizable face, not a
+                 tiny sliver, not noise-eaten, correct crop), publish it:
+                 `npm run publish-author-portrait -- "Name"` (uploads to
+                 R2, sets authors.portrait_url, no commit involved) and
+                 move to the next author.
+               - Attempt 2 (only if attempt 1 failed): one Wikimedia
+                 Commons query for an alternate —
+                 `curl -s -G "https://commons.wikimedia.org/w/api.php" --data-urlencode "action=query" --data-urlencode "generator=search" --data-urlencode "gsrsearch=<Author Name> portrait -statue -stamp" --data-urlencode "gsrnamespace=6" --data-urlencode "gsrlimit=8" --data-urlencode "prop=imageinfo" --data-urlencode "iiprop=url|size" --data-urlencode "format=json" -H "User-Agent: oneoneone/1.0"`
+                 — prefer engravings/etchings over paintings or busy photos
+                 (they threshold far more reliably), and a plain background
+                 over an environmental/candid shot. Download one candidate
+                 straight into public/authors/_source/<slug>.<ext> with
+                 curl (matching the User-Agent convention in
+                 fetch-author-portrait.ts). If the subject is small against
+                 a lot of clutter, pre-crop tightly to just the
+                 head/shoulders with sharp before reprocessing rather than
+                 relying on process-author-portraits.ts's own
+                 content-detection — this alone fixes most failures. Then
+                 look at the result once and publish or move on — no
+                 further attempts this run.
+               - If both attempts fail, leave portrait_url null and move to
+                 the next author; next month's run picks it back up.
+
+            3. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
+               `npm test`, `npm run build` must all pass clean. Redirect
+               each to a file and only read the tail if it fails (e.g.
+               `npm run build > /tmp/build.log 2>&1 || tail -60
+               /tmp/build.log`) — a clean run's full output has no judgment
+               call in it, just tokens.
+
+            4. Portraits publish straight to R2/the database — there's
+               normally no file to commit. If anything under
+               public/authors/_source or _staging was left behind by
+               mistake, clean it up (both are gitignored working
+               directories, never meant to be committed).
+
+            If nothing is missing a portrait, that's a normal, successful
+            run — just say so and stop.

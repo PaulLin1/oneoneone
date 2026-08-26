@@ -6,7 +6,7 @@ export default function AboutPage() {
         <div className="mt-3 h-1.5 w-16 bg-yellow" aria-hidden="true" />
       </div>
 
-      <div className="space-y-10 border-t border-black/15 pt-10 font-serif text-base leading-relaxed">
+      <div className="space-y-10 border-t border-ink/15 pt-10 font-serif text-base leading-relaxed">
         <section>
           <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
             <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
@@ -76,7 +76,7 @@ export default function AboutPage() {
             Found a bad transcription? Have a work to suggest? Just want to say something? Email{" "}
             <a
               href="mailto:hello@readoneoneone.com"
-              className="text-ink underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-black"
+              className="text-ink underline decoration-ink/20 underline-offset-4 transition-colors hover:decoration-ink"
             >
               hello@readoneoneone.com
             </a>
