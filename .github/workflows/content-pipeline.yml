@@ -40,7 +40,7 @@ jobs:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Bash,Read,Edit,Write,WebFetch,WebSearch"
+          claude_args: '--allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
           prompt: |
             You're running the oneoneone content pipeline unattended, on a
             schedule, standing in for the human reviewer this project's docs
