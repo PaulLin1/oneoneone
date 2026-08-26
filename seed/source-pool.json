@@ -28,5 +28,65 @@
     "source_url": "https://en.wikisource.org/wiki/Mountain_Interval/Birches",
     "region": "United States",
     "tags": ["nature", "imagination", "childhood"]
+  },
+  {
+    "title": "The Legend of Sleepy Hollow",
+    "author_name": "Washington Irving",
+    "year": 1820,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The_Sketchbook_of_Geoffrey_Crayon_(1819)/The_Legend_of_Sleepy_Hollow",
+    "region": "United States",
+    "tags": ["folklore", "horror", "romance", "small town"]
+  },
+  {
+    "title": "The Cask of Amontillado",
+    "author_name": "Edgar Allan Poe",
+    "year": 1846,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/1063/1063-0.txt",
+    "region": "United States",
+    "tags": ["revenge", "horror", "irony"]
+  },
+  {
+    "title": "Rip Van Winkle",
+    "author_name": "Washington Irving",
+    "year": 1819,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/60976/60976-0.txt",
+    "region": "United States",
+    "tags": ["folklore", "time", "small town"]
+  },
+  {
+    "title": "We Wear the Mask",
+    "author_name": "Paul Laurence Dunbar",
+    "year": 1895,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The_Complete_Poems_of_Paul_Laurence_Dunbar/We_Wear_the_Mask",
+    "region": "United States",
+    "tags": ["identity", "race", "endurance"]
+  },
+  {
+    "title": "Walking",
+    "author_name": "Henry David Thoreau",
+    "year": 1862,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/1022/1022-0.txt",
+    "region": "United States",
+    "tags": ["nature", "solitude", "walking"]
+  },
+  {
+    "title": "On the Duty of Civil Disobedience",
+    "author_name": "Henry David Thoreau",
+    "year": 1849,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/71/71-0.txt",
+    "region": "United States",
+    "tags": ["politics", "government", "conscience"]
   }
 ]

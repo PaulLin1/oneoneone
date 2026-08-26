@@ -407,10 +407,13 @@ source_pool ──▶ content_candidates ──(reviewed, approved)──▶ wor
 - **Review**: `npm run review` lists everything with `status = 'needs_review'`.
   `npm run review -- edit <id> --description=... --tags=a,b,c [...]` fills
   in the fields the fetch step deliberately leaves blank, without touching
-  SQL directly. `npm run review -- promote <id> --era=<era> [--difficulty=...]`
-  requires an explicit `--era` (no more silently-null eras) and refuses to
-  promote anything whose `rights_status` isn't `public_domain` unless you
-  pass `--force-pd` — a reviewer has to make that call, not the pipeline.
+  SQL directly. `npm run review -- promote <id> [--era=<era>]
+  [--difficulty=...]` promotes it — `era`/`difficulty` are optional (the
+  `/admin/review/[id]` Promote button skips them entirely, since neither is
+  shown to readers anywhere today; the automated pipeline still fills them
+  in as part of its careful per-candidate review). Promotion refuses
+  anything whose `rights_status` isn't `public_domain` unless you pass
+  `--force-pd` — a reviewer has to make that call, not the pipeline.
   `npm run review -- reject <id> "reason"` marks it rejected (kept, not
   deleted — an audit trail of what was considered and why). As of
   `content-pipeline.yml` (see "Automation" above), this review step runs on

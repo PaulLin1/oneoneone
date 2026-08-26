@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { selectDailyWorks } from "@/lib/selection/algorithm";
+import { selectDailyWorks, catalogUsage } from "@/lib/selection/algorithm";
 import { dateForDay } from "@/lib/epoch";
 import { makeWork, makeWorks } from "./helpers";
 
@@ -86,4 +86,38 @@ test("day and date on the returned selection match the inputs", () => {
   const selection = selectDailyWorks({ date, works });
   assert.equal(selection.day, 42);
   assert.equal(selection.date, date);
+});
+
+test("catalogUsage: on day 1, exactly one work per category is used", () => {
+  const works = [...makeWorks("poem", 5), ...makeWorks("essay", 4), ...makeWorks("story", 6)];
+  const usage = catalogUsage(works, dateForDay(1));
+  for (const category of ["poem", "essay", "story"] as const) {
+    const used = usage[category].filter((u) => u.used);
+    assert.equal(used.length, 1);
+  }
+});
+
+test("catalogUsage: everything is used once the rotation has fully cycled", () => {
+  const works = makeWorks("poem", 5);
+  const usage = catalogUsage([...works, ...makeWorks("essay", 1), ...makeWorks("story", 1)], dateForDay(5));
+  assert.ok(usage.poem.every((u) => u.used));
+});
+
+test("catalogUsage: a work not yet reached in the rotation is marked unused", () => {
+  const works = makeWorks("poem", 5);
+  const usage = catalogUsage([...works, ...makeWorks("essay", 1), ...makeWorks("story", 1)], dateForDay(1));
+  const unused = usage.poem.filter((u) => !u.used);
+  assert.equal(unused.length, 4);
+});
+
+test("catalogUsage agrees with selectDailyWorks: the used positions on day D are exactly what was ever picked in days 1..D", () => {
+  const works = [...makeWorks("poem", 7), ...makeWorks("essay", 1), ...makeWorks("story", 1)];
+  const day = 4;
+  const pickedIds = new Set<string>();
+  for (let d = 1; d <= day; d++) {
+    pickedIds.add(selectDailyWorks({ date: dateForDay(d), works }).poem.id);
+  }
+  const usage = catalogUsage(works, dateForDay(day));
+  const usedIds = new Set(usage.poem.filter((u) => u.used).map((u) => u.work.id));
+  assert.deepEqual(usedIds, pickedIds);
 });

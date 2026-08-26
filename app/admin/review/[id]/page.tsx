@@ -1,16 +1,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import {
   getCandidate,
   editCandidate,
   promoteCandidate,
   rejectCandidate,
-  ERAS,
-  DIFFICULTIES,
   RIGHTS_STATUSES,
-  type Era,
-  type Difficulty,
   type RightsStatus,
 } from "@/lib/contentReview";
 
@@ -59,8 +56,6 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
     "use server";
     await requireReviewer();
     const result = await promoteCandidate(id, {
-      era: formData.get("era") as Era,
-      difficulty: (formData.get("difficulty") as Difficulty) || undefined,
       forcePd: formData.get("forcePd") === "on",
     });
     if ("error" in result) {
@@ -135,39 +130,28 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
       <div className="grid gap-8 border-t border-ink/15 pt-8 sm:grid-cols-2">
         <form action={doPromote} className="space-y-3">
           <h2 className={labelClass}>Promote</h2>
-          <select name="era" required defaultValue="" className={inputClass}>
-            <option value="" disabled>
-              Era…
-            </option>
-            {ERAS.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
-          <select name="difficulty" defaultValue="medium" className={inputClass}>
-            {DIFFICULTIES.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
           {candidate.rights_status !== "public_domain" && (
             <label className="flex items-center gap-2 text-xs text-ink-soft">
               <input type="checkbox" name="forcePd" /> Force-promote despite unverified rights
             </label>
           )}
-          <button type="submit" className="bg-yellow px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-black hover:opacity-80">
+          <ConfirmSubmitButton
+            confirmMessage={`Promote "${candidate.title}" and make it live? This starts showing up in the daily rotation.`}
+            className="bg-yellow px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-black hover:opacity-80"
+          >
             Promote
-          </button>
+          </ConfirmSubmitButton>
         </form>
 
         <form action={doReject} className="space-y-3">
           <h2 className={labelClass}>Reject</h2>
           <textarea name="notes" rows={3} placeholder="Reason (kept for the record)" className={inputClass} />
-          <button type="submit" className="border border-ink/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-ink/5">
+          <ConfirmSubmitButton
+            confirmMessage={`Reject "${candidate.title}"? It stays in the record as rejected, but this can't be undone from here.`}
+            className="border border-ink/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-ink/5"
+          >
             Reject
-          </button>
+          </ConfirmSubmitButton>
         </form>
       </div>
     </main>

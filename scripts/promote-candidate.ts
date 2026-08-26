@@ -136,7 +136,7 @@ async function main() {
     "  npm run review -- edit <candidate-id> [--description=\"...\"] [--tags=a,b,c] [--region=...] [--reading-minutes=N] [--rights-status=public_domain|licensed|unverified] [--source-url=...]"
   );
   console.log(
-    "  npm run review -- promote <candidate-id> --era=ancient|19th_century|early_20th_century|modern [--difficulty=easy|medium|challenging] [--force-pd]"
+    "  npm run review -- promote <candidate-id> [--era=ancient|19th_century|early_20th_century|modern] [--difficulty=easy|medium|challenging] [--force-pd]"
   );
   console.log("  npm run review -- reject <candidate-id> [notes]");
   process.exitCode = 1;

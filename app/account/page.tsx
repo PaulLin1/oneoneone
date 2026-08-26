@@ -2,8 +2,12 @@ import { auth, signIn } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { SignOutForm } from "@/components/SignOutForm";
 import { ReadingHistorySection } from "@/components/ReadingHistorySection";
+import { AdminOverviewSection } from "@/components/AdminOverviewSection";
 import { todayIso } from "@/lib/dateMath";
 import type { ReadingHistoryEntry } from "@/lib/readingCalendar";
+import { listPendingCandidates } from "@/lib/contentReview";
+import { catalogUsage } from "@/lib/selection/algorithm";
+import type { Work } from "@/lib/types";
 
 // How far back the /account calendar reaches — a bit more than this in
 // practice, since buildReadingCalendar aligns outward to whole weeks.
@@ -86,6 +90,20 @@ export default async function AccountPage() {
     sourceDate: r.source_date,
   }));
 
+  // Review queue + catalog usage are reviewer/admin-only and cost an extra
+  // couple of queries — skip them entirely for the common case (a plain
+  // reader) rather than computing something that's never rendered.
+  const isReviewer = session.user.role === "reviewer" || session.user.role === "admin";
+  let adminContent = null;
+  if (isReviewer) {
+    const [pending, worksRows] = await Promise.all([
+      listPendingCandidates(),
+      sql`select * from works_feed where is_active = true`,
+    ]);
+    const works = worksRows as unknown as Work[];
+    adminContent = <AdminOverviewSection pending={pending} usage={catalogUsage(works, today)} />;
+  }
+
   return (
     <main className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col overflow-hidden px-6 py-6 sm:px-10 sm:py-8">
       <div className="mb-6 flex shrink-0 items-start justify-between gap-4">
@@ -103,7 +121,12 @@ export default async function AccountPage() {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col border-t border-ink/15 pt-6">
-        <ReadingHistorySection today={today} weeks={CALENDAR_WEEKS} initialHistory={history} />
+        <ReadingHistorySection
+          today={today}
+          weeks={CALENDAR_WEEKS}
+          initialHistory={history}
+          adminContent={adminContent}
+        />
       </div>
     </main>
   );

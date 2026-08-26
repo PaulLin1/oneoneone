@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { currentStreak, type ReadingHistoryEntry } from "@/lib/readingCalendar";
 import { ReadingCalendar } from "@/components/ReadingCalendar";
@@ -19,10 +19,16 @@ export function ReadingHistorySection({
   today,
   weeks,
   initialHistory,
+  adminContent,
 }: {
   today: string;
   weeks: number;
   initialHistory: ReadingHistoryEntry[];
+  /** Reviewer/admin-only cards (see AdminOverviewSection) rendered above
+   *  Overview/Reading history, in the same scroll container — a plain
+   *  slot rather than this component knowing anything about candidates
+   *  or the catalog. */
+  adminContent?: ReactNode;
 }) {
   const [rows, setRows] = useState(initialHistory);
 
@@ -47,6 +53,7 @@ export function ReadingHistorySection({
     // actual visual structure instead of everything reading as one loose
     // stack of elements.
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
+      {adminContent}
       <section className="shrink-0 border border-ink/15">
         <div className="flex items-center gap-2 border-b border-ink/15 px-5 py-3">
           <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />

@@ -162,11 +162,12 @@ See "Accounts" in `README.md` for the architecture. Operationally:
 
 | Variable | Where it lives | Used by |
 |---|---|---|
-| `DATABASE_URL` | `.env.local` (local dev, gitignored) · Vercel project env vars · GitHub Actions repo secret | The app at runtime · `content-pipeline.yml` · every `npm run` pipeline script |
-| `ANTHROPIC_API_KEY` | GitHub Actions repo secret only | `content-pipeline.yml`'s Claude Code agent step |
+| `DATABASE_URL` | `.env.local` (local dev, gitignored) · Vercel project env vars · GitHub Actions repo secret | The app at runtime · `content-pipeline.yml` · `author-portraits.yml` · every `npm run` pipeline script |
+| `ANTHROPIC_API_KEY` | GitHub Actions repo secret only | `content-pipeline.yml` and `author-portraits.yml`'s Claude Code agent steps |
 | `AUTH_SECRET` | `.env.local` · Vercel project env vars | Auth.js session/cookie signing — set this everywhere regardless of whether sign-in is configured yet; generate with `npx auth secret` |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | `.env.local` · Vercel project env vars | Sign-in (`lib/auth.ts`) — genuinely optional; the app runs fine without these, sign-in just won't work |
-| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars · GitHub Actions repo secrets (so `content-pipeline.yml` can publish real portraits) | Author-portrait storage — genuinely optional; without it every author just shows a generated initial instead of a real photo, nothing errors. **After setting these, run `npm run setup-r2-cors` once** — see Troubleshooting below for what happens if you skip it. |
+| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET_NAME` / `R2_PUBLIC_URL` | `.env.local` · Vercel project env vars · GitHub Actions repo secrets (so `author-portraits.yml` can publish real portraits) | Author-portrait storage — genuinely optional; without it every author just shows a generated initial instead of a real photo, nothing errors. **After setting these, run `npm run setup-r2-cors` once** — see Troubleshooting below for what happens if you skip it. |
+| `GITHUB_DISPATCH_TOKEN` | `.env.local` · Vercel project env vars | The "Fetch portraits" button on `/account` (`app/api/admin/trigger-author-portraits`) — a fine-grained GitHub PAT scoped to this repo with Actions read/write, used only to call `workflow_dispatch` on `author-portraits.yml`. Optional — without it the button just returns a clear error; triggering the workflow by hand from the Actions tab still works either way. |
 
 If the Neon connection string ever changes (new project, rotated
 credentials, moved to a different region), it has to be updated

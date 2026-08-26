@@ -91,7 +91,7 @@ export async function editCandidate(
 
 export async function promoteCandidate(
   id: string,
-  options: { era: Era; difficulty?: Difficulty; forcePd?: boolean }
+  options: { era?: Era; difficulty?: Difficulty; forcePd?: boolean } = {}
 ): Promise<{ error: string } | { ok: true; workId: string }> {
   const candidate = await getCandidate(id);
   if (!candidate) return { error: `No candidate found with id ${id}` };
@@ -107,8 +107,8 @@ export async function promoteCandidate(
   if (!candidate.source_url) {
     return { error: "Candidate has no source_url — a promoted work always needs one to cite." };
   }
-  if (!options.era || !ERAS.includes(options.era)) {
-    return { error: `era is required: one of ${ERAS.join(", ")}` };
+  if (options.era && !ERAS.includes(options.era)) {
+    return { error: `era must be one of: ${ERAS.join(", ")}` };
   }
   if (options.difficulty && !DIFFICULTIES.includes(options.difficulty)) {
     return { error: `difficulty must be one of: ${DIFFICULTIES.join(", ")}` };
@@ -145,7 +145,7 @@ export async function promoteCandidate(
       ${candidate.category}, ${candidate.text_content},
       ${candidate.description}, ${candidate.source_name},
       ${candidate.source_url}, ${rightsStatus}, ${difficulty},
-      ${candidate.reading_minutes}, ${options.era}, ${candidate.region},
+      ${candidate.reading_minutes}, ${options.era ?? null}, ${candidate.region},
       'approved', ${candidate.origin}
     )
     on conflict (title, author_id) do update set status = 'approved', updated_at = now()
