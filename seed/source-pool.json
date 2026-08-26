@@ -88,5 +88,35 @@
     "source_url": "https://www.gutenberg.org/files/71/71-0.txt",
     "region": "United States",
     "tags": ["politics", "government", "conscience"]
+  },
+  {
+    "title": "The Fall of the House of Usher",
+    "author_name": "Edgar Allan Poe",
+    "year": 1839,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/932/932.txt",
+    "region": "United States",
+    "tags": ["horror", "gothic", "madness"]
+  },
+  {
+    "title": "The Masque of the Red Death",
+    "author_name": "Edgar Allan Poe",
+    "year": 1842,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/1064/1064-0.txt",
+    "region": "United States",
+    "tags": ["horror", "allegory", "death"]
+  },
+  {
+    "title": "The Lady, or the Tiger?",
+    "author_name": "Frank R. Stockton",
+    "year": 1882,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/396/396.txt",
+    "region": "United States",
+    "tags": ["ambiguity", "justice", "romance"]
   }
 ]
