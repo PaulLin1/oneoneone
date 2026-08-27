@@ -21,6 +21,14 @@ jobs:
 
       - run: npm run lint
 
+      # tsc needs .next/types/ (LayoutProps, PageProps, etc.) to exist first
+      # — a fresh checkout has no .next/ at all, and this repo's own npm
+      # run build comes after tsc below, so without this step CI fails on
+      # "Cannot find name 'LayoutProps'" even though it works locally
+      # (where .next/ already exists from prior next dev/build runs).
+      # typegen only generates types, not a full build, so it stays fast.
+      - run: npx next typegen
+
       - run: npx tsc --noEmit
 
       - run: npm test
