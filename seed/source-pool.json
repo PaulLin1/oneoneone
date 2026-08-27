@@ -118,5 +118,35 @@
     "source_url": "https://www.gutenberg.org/files/396/396.txt",
     "region": "United States",
     "tags": ["ambiguity", "justice", "romance"]
+  },
+  {
+    "title": "If—",
+    "author_name": "Rudyard Kipling",
+    "year": 1910,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/Rewards_and_Fairies/If%E2%80%94",
+    "region": "England",
+    "tags": ["stoicism", "virtue", "fatherhood", "resilience"]
+  },
+  {
+    "title": "The Lake Isle of Innisfree",
+    "author_name": "William Butler Yeats",
+    "year": 1890,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The_Lake_Isle_of_Innisfree",
+    "region": "Ireland",
+    "tags": ["nature", "solitude", "longing"]
+  },
+  {
+    "title": "If We Must Die",
+    "author_name": "Claude McKay",
+    "year": 1919,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The_Book_of_American_Negro_Poetry/If_We_Must_Die",
+    "region": "United States",
+    "tags": ["defiance", "race", "resistance", "war"]
   }
 ]
