@@ -705,5 +705,35 @@
       "children's poetry, german",
       "children's stories, german"
     ]
+  },
+  {
+    "title": "Invictus",
+    "author_name": "William Ernest Henley",
+    "year": 1875,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/Oxford_Book_of_English_Verse_1250-1900/Invictus",
+    "region": "England",
+    "tags": ["stoicism", "resilience", "fate"]
+  },
+  {
+    "title": "A White Heron",
+    "author_name": "Sarah Orne Jewett",
+    "year": 1886,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/A_White_Heron",
+    "region": "United States",
+    "tags": ["nature", "childhood", "choice"]
+  },
+  {
+    "title": "Désirée's Baby",
+    "author_name": "Kate Chopin",
+    "year": 1895,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/Bayou_Folk/D%C3%A9sir%C3%A9e%27s_Baby",
+    "region": "United States",
+    "tags": ["race", "marriage", "tragedy"]
   }
 ]
