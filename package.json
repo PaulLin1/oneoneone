@@ -15,7 +15,8 @@
     "fetch-author-portrait": "tsx --env-file=.env.local scripts/fetch-author-portrait.ts",
     "process-author-portraits": "tsx scripts/process-author-portraits.ts",
     "publish-author-portrait": "tsx --env-file=.env.local scripts/publish-author-portrait.ts",
-    "setup-r2-cors": "tsx --env-file=.env.local scripts/setup-r2-cors.ts"
+    "setup-r2-cors": "tsx --env-file=.env.local scripts/setup-r2-cors.ts",
+    "reset-content": "tsx --env-file=.env.local scripts/reset-content.ts"
   },
   "dependencies": {
     "@auth/neon-adapter": "^1.11.3",

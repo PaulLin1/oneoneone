@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { getDb } from "@/lib/db";
 import { computeRightsStatus } from "@/lib/rights";
+import { generateDescription } from "@/lib/generateDescription";
 import type { WorkCategory } from "@/lib/types";
 
 /**
@@ -16,7 +17,15 @@ import type { WorkCategory } from "@/lib/types";
 type SourcePoolEntry = {
   title: string;
   author_name: string;
-  year: number;
+  // Original publication year, when it's actually known. Bulk-harvested
+  // entries (scripts/grow-source-pool.ts) often can't establish this
+  // confidently — Gutenberg's own metadata is the *digitization* date, not
+  // the work's original publication date — so this is null for those, and
+  // author_death_year carries the public-domain justification instead (see
+  // lib/rights.ts's isPublicDomainByAuthorDeath, the Berne life+70 floor
+  // that exists specifically for this case).
+  year: number | null;
+  author_death_year?: number | null;
   category: WorkCategory;
   source_name: string;
   source_url: string;
@@ -33,6 +42,14 @@ export type FetchCandidatesResult = {
 
 const START_MARKER = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
 const END_MARKER = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
+
+// Wikimedia's API etiquette policy rate-limits requests with no User-Agent
+// much more aggressively (shared anonymous-traffic bucket) — see
+// https://meta.wikimedia.org/wiki/User-Agent_policy. Without this, a run
+// touching several Wikisource entries in a row could genuinely get
+// rate-limited (HTTP 429) partway through, same as a missing per-request
+// delay — see the pacing note in the main loop below.
+const USER_AGENT = "oneoneone-content-fetch/1.0 (https://github.com/PaulLin1/oneoneone)";
 
 function stripGutenbergBoilerplate(raw: string): string {
   const startMatch = raw.match(START_MARKER);
@@ -58,14 +75,16 @@ async function fetchFromWikisource(pageUrl: string): Promise<string> {
   const title = decodeURIComponent(pathname.replace(/^\/wiki\//, ""));
   const apiUrl = `https://${hostname}/w/api.php?action=query&prop=extracts&explaintext=1&redirects=1&format=json&titles=${encodeURIComponent(title)}`;
 
-  const res = await fetch(apiUrl);
+  const res = await fetch(apiUrl, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Wikisource API HTTP ${res.status}`);
   const json = (await res.json()) as { query?: { pages?: Record<string, { extract?: string }> } };
   const page = Object.values(json.query?.pages ?? {})[0];
   const extract = page?.extract?.trim() ?? "";
   if (extract.length >= 200) return extract;
 
-  const rawRes = await fetch(`${pageUrl}${pageUrl.includes("?") ? "&" : "?"}action=raw`);
+  const rawRes = await fetch(`${pageUrl}${pageUrl.includes("?") ? "&" : "?"}action=raw`, {
+    headers: { "User-Agent": USER_AGENT },
+  });
   if (!rawRes.ok) throw new Error(`Wikisource raw-wikitext HTTP ${rawRes.status}`);
   const wikitext = await rawRes.text();
   const poemMatch = wikitext.match(/<poem[^>]*>([\s\S]*?)<\/poem>/i);
@@ -74,15 +93,34 @@ async function fetchFromWikisource(pageUrl: string): Promise<string> {
   return extract;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * One retry, after a real pause, specifically for 429 — a rate-limit is a
+ * "you were too fast," not "this source is bad" error, and treating the
+ * two the same means a run touching several Wikisource entries in a row
+ * can spuriously fail entries whose URL is perfectly fine.
+ */
 async function fetchWorkText(entry: SourcePoolEntry): Promise<string> {
   const { hostname } = new URL(entry.source_url);
-  if (hostname.endsWith("wikisource.org")) {
-    return fetchFromWikisource(entry.source_url);
+  const fetchOnce = (): Promise<string> =>
+    hostname.endsWith("wikisource.org")
+      ? fetchFromWikisource(entry.source_url)
+      : fetch(entry.source_url, { headers: { "User-Agent": USER_AGENT } }).then(async (res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return stripGutenbergBoilerplate(await res.text());
+        });
+
+  try {
+    return await fetchOnce();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes("429")) throw err;
+    await sleep(3000);
+    return fetchOnce();
   }
-  const res = await fetch(entry.source_url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const raw = await res.text();
-  return stripGutenbergBoilerplate(raw);
 }
 
 function sourceTierFor(hostname: string): "high_trust" | "standard" | "ocr_unverified" {
@@ -158,12 +196,17 @@ export async function fetchCandidates(perCategoryLimit: number): Promise<FetchCa
   };
   const stagedByCategory: Record<WorkCategory, number> = { poem: 0, essay: 0, story: 0 };
 
-  for (const entry of shuffled) {
+  for (const [i, entry] of shuffled.entries()) {
     const full = (Object.keys(stagedByCategory) as WorkCategory[]).every(
       (c) => stagedByCategory[c] >= perCategoryLimit
     );
     if (full) break;
     if (stagedByCategory[entry.category] >= perCategoryLimit) continue;
+
+    // Stay polite to Wikimedia's API (see USER_AGENT comment above) — a
+    // burst of same-second requests is what triggers the 429s the retry in
+    // fetchWorkText exists to paper over; better to just not trigger them.
+    if (i > 0) await sleep(300);
 
     if (await alreadyKnown(entry.source_url)) {
       console.log(`  – skipped (already known) — ${entry.title}`);
@@ -186,8 +229,20 @@ export async function fetchCandidates(perCategoryLimit: number): Promise<FetchCa
       }
 
       const readingMinutes = Math.max(1, Math.round(wordCount(text) / 200));
-      const rightsStatus = computeRightsStatus({ publicationYear: entry.year });
+      const rightsStatus = computeRightsStatus({
+        publicationYear: entry.year,
+        authorDeathYear: entry.author_death_year ?? null,
+      });
       const sourceTier = sourceTierFor(new URL(entry.source_url).hostname);
+      // Best-effort — a reviewer can still edit this in /admin/review
+      // regardless of whether generation succeeded (see generateDescription's
+      // own doc comment for why this never blocks staging).
+      const description = await generateDescription({
+        title: entry.title,
+        authorName: entry.author_name,
+        category: entry.category,
+        text,
+      });
 
       await sql`
         insert into content_candidates (
@@ -196,14 +251,15 @@ export async function fetchCandidates(perCategoryLimit: number): Promise<FetchCa
           origin, status, rights_status, source_tier
         ) values (
           ${entry.title}, ${entry.author_name}, ${entry.year}, ${entry.category},
-          ${text}, null, ${entry.source_name}, ${entry.source_url},
+          ${text}, ${description}, ${entry.source_name}, ${entry.source_url},
           ${entry.region ?? null}, ${entry.tags}, ${readingMinutes},
           'fetch_pipeline', 'needs_review', ${rightsStatus}, ${sourceTier}
         )
       `;
 
       console.log(
-        `  ✓ staged — [${entry.category}] ${entry.title} (${entry.author_name}) — rights: ${rightsStatus}, tier: ${sourceTier}`
+        `  ✓ staged — [${entry.category}] ${entry.title} (${entry.author_name}) — rights: ${rightsStatus}, tier: ${sourceTier}` +
+          (description ? "" : " (no description generated — edit it in review)")
       );
       result.staged.push({ title: entry.title, author_name: entry.author_name, category: entry.category });
       stagedByCategory[entry.category]++;

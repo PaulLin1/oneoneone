@@ -1,5 +1,20 @@
 [
   {
+    "title": "The Legend of Sleepy Hollow",
+    "author_name": "Washington Irving",
+    "year": 1820,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The_Sketchbook_of_Geoffrey_Crayon_(1819)/The_Legend_of_Sleepy_Hollow",
+    "region": "United States",
+    "tags": [
+      "folklore",
+      "horror",
+      "romance",
+      "small town"
+    ]
+  },
+  {
     "title": "A Modest Proposal",
     "author_name": "Jonathan Swift",
     "year": 1729,
@@ -7,7 +22,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/1080/1080-0.txt",
     "region": "Ireland",
-    "tags": ["satire", "poverty", "politics"]
+    "tags": [
+      "satire",
+      "poverty",
+      "politics"
+    ]
   },
   {
     "title": "The Interlopers",
@@ -17,7 +36,12 @@
     "source_name": "Wikisource",
     "source_url": "https://en.wikisource.org/wiki/The_Toys_of_Peace_and_Other_Papers/The_Interlopers",
     "region": "England",
-    "tags": ["irony", "feud", "nature", "twist ending"]
+    "tags": [
+      "irony",
+      "feud",
+      "nature",
+      "twist ending"
+    ]
   },
   {
     "title": "Birches",
@@ -27,17 +51,11 @@
     "source_name": "Wikisource",
     "source_url": "https://en.wikisource.org/wiki/Mountain_Interval/Birches",
     "region": "United States",
-    "tags": ["nature", "imagination", "childhood"]
-  },
-  {
-    "title": "The Legend of Sleepy Hollow",
-    "author_name": "Washington Irving",
-    "year": 1820,
-    "category": "story",
-    "source_name": "Wikisource",
-    "source_url": "https://en.wikisource.org/wiki/The_Sketchbook_of_Geoffrey_Crayon_(1819)/The_Legend_of_Sleepy_Hollow",
-    "region": "United States",
-    "tags": ["folklore", "horror", "romance", "small town"]
+    "tags": [
+      "nature",
+      "imagination",
+      "childhood"
+    ]
   },
   {
     "title": "The Cask of Amontillado",
@@ -47,7 +65,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/1063/1063-0.txt",
     "region": "United States",
-    "tags": ["revenge", "horror", "irony"]
+    "tags": [
+      "revenge",
+      "horror",
+      "irony"
+    ]
   },
   {
     "title": "Rip Van Winkle",
@@ -57,7 +79,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/60976/60976-0.txt",
     "region": "United States",
-    "tags": ["folklore", "time", "small town"]
+    "tags": [
+      "folklore",
+      "time",
+      "small town"
+    ]
   },
   {
     "title": "We Wear the Mask",
@@ -67,7 +93,11 @@
     "source_name": "Wikisource",
     "source_url": "https://en.wikisource.org/wiki/The_Complete_Poems_of_Paul_Laurence_Dunbar/We_Wear_the_Mask",
     "region": "United States",
-    "tags": ["identity", "race", "endurance"]
+    "tags": [
+      "identity",
+      "race",
+      "endurance"
+    ]
   },
   {
     "title": "Walking",
@@ -77,7 +107,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/1022/1022-0.txt",
     "region": "United States",
-    "tags": ["nature", "solitude", "walking"]
+    "tags": [
+      "nature",
+      "solitude",
+      "walking"
+    ]
   },
   {
     "title": "On the Duty of Civil Disobedience",
@@ -87,7 +121,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/71/71-0.txt",
     "region": "United States",
-    "tags": ["politics", "government", "conscience"]
+    "tags": [
+      "politics",
+      "government",
+      "conscience"
+    ]
   },
   {
     "title": "The Fall of the House of Usher",
@@ -97,7 +135,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/932/932.txt",
     "region": "United States",
-    "tags": ["horror", "gothic", "madness"]
+    "tags": [
+      "horror",
+      "gothic",
+      "madness"
+    ]
   },
   {
     "title": "The Masque of the Red Death",
@@ -107,7 +149,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/1064/1064-0.txt",
     "region": "United States",
-    "tags": ["horror", "allegory", "death"]
+    "tags": [
+      "horror",
+      "allegory",
+      "death"
+    ]
   },
   {
     "title": "The Lady, or the Tiger?",
@@ -117,17 +163,11 @@
     "source_name": "Project Gutenberg",
     "source_url": "https://www.gutenberg.org/files/396/396.txt",
     "region": "United States",
-    "tags": ["ambiguity", "justice", "romance"]
-  },
-  {
-    "title": "If—",
-    "author_name": "Rudyard Kipling",
-    "year": 1910,
-    "category": "poem",
-    "source_name": "Wikisource",
-    "source_url": "https://en.wikisource.org/wiki/Rewards_and_Fairies/If%E2%80%94",
-    "region": "England",
-    "tags": ["stoicism", "virtue", "fatherhood", "resilience"]
+    "tags": [
+      "ambiguity",
+      "justice",
+      "romance"
+    ]
   },
   {
     "title": "The Lake Isle of Innisfree",
@@ -137,16 +177,533 @@
     "source_name": "Wikisource",
     "source_url": "https://en.wikisource.org/wiki/The_Lake_Isle_of_Innisfree",
     "region": "Ireland",
-    "tags": ["nature", "solitude", "longing"]
+    "tags": [
+      "nature",
+      "solitude",
+      "longing"
+    ]
   },
   {
-    "title": "If We Must Die",
-    "author_name": "Claude McKay",
-    "year": 1919,
+    "title": "Nature",
+    "author_name": "Ralph Waldo Emerson",
+    "year": 1836,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/29433/29433.txt",
+    "region": "United States",
+    "tags": [
+      "nature",
+      "transcendentalism"
+    ]
+  },
+  {
+    "title": "The Man Who Would Be King",
+    "author_name": "Rudyard Kipling",
+    "year": 1888,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/8147/8147-0.txt",
+    "region": "England",
+    "tags": [
+      "adventure",
+      "empire",
+      "hubris"
+    ]
+  },
+  {
+    "title": "Trees",
+    "author_name": "Joyce Kilmer",
+    "year": 1913,
+    "category": "poem",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/263/263.txt",
+    "region": "United States",
+    "tags": [
+      "nature",
+      "religion"
+    ]
+  },
+  {
+    "title": "Barbara Frietchie",
+    "author_name": "John Greenleaf Whittier",
+    "year": 1863,
+    "category": "poem",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/19632/19632.txt",
+    "region": "United States",
+    "tags": [
+      "war",
+      "defiance"
+    ]
+  },
+  {
+    "title": "Self-Reliance",
+    "author_name": "Ralph Waldo Emerson",
+    "year": 1841,
+    "category": "essay",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/Essays%3A%20First%20Series/Self-Reliance",
+    "region": "United States",
+    "tags": [
+      "individualism",
+      "philosophy"
+    ]
+  },
+  {
+    "title": "A Defence of Poetry",
+    "author_name": "Percy Bysshe Shelley",
+    "year": 1840,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/5428/5428.txt",
+    "region": "England",
+    "tags": [
+      "poetry",
+      "philosophy"
+    ]
+  },
+  {
+    "title": "On the Pleasure of Hating",
+    "author_name": "William Hazlitt",
+    "year": 1826,
+    "category": "essay",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/On%20the%20Pleasure%20of%20Hating",
+    "region": "England",
+    "tags": [
+      "human nature",
+      "cynicism"
+    ]
+  },
+  {
+    "title": "The Decay of Lying",
+    "author_name": "Oscar Wilde",
+    "year": 1889,
+    "category": "essay",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/Intentions/The%20Decay%20of%20Lying",
+    "region": "Ireland",
+    "tags": [
+      "art",
+      "aesthetics"
+    ]
+  },
+  {
+    "title": "The Signal-Man",
+    "author_name": "Charles Dickens",
+    "year": 1866,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The%20Signal-Man",
+    "region": "England",
+    "tags": [
+      "horror",
+      "ghost",
+      "railway"
+    ]
+  },
+  {
+    "title": "In Flanders Fields",
+    "author_name": "John McCrae",
+    "year": 1915,
+    "category": "poem",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/353/353.txt",
+    "region": "Canada",
+    "tags": [
+      "war",
+      "remembrance"
+    ]
+  },
+  {
+    "title": "Anthem for Doomed Youth",
+    "author_name": "Wilfred Owen",
+    "year": 1920,
     "category": "poem",
     "source_name": "Wikisource",
-    "source_url": "https://en.wikisource.org/wiki/The_Book_of_American_Negro_Poetry/If_We_Must_Die",
+    "source_url": "https://en.wikisource.org/wiki/Anthem%20for%20Doomed%20Youth%20(Stallworthy%20edition)",
+    "region": "England",
+    "tags": [
+      "war",
+      "death",
+      "grief"
+    ]
+  },
+  {
+    "title": "Dulce et Decorum Est",
+    "author_name": "Wilfred Owen",
+    "year": 1920,
+    "category": "poem",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The%20Complete%20Poems%20and%20Fragments%20of%20Wilfred%20Owen/Dulce%20et%20Decorum%20Est",
+    "region": "England",
+    "tags": [
+      "war",
+      "horror"
+    ]
+  },
+  {
+    "title": "The Listeners",
+    "author_name": "Walter de la Mare",
+    "year": 1912,
+    "category": "poem",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/22569/22569.txt",
+    "region": "England",
+    "tags": [
+      "mystery",
+      "solitude"
+    ]
+  },
+  {
+    "title": "The Vision of Sudden Death",
+    "author_name": "Thomas De Quincey",
+    "year": 1849,
+    "category": "essay",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The%20Vision%20of%20Sudden%20Death",
+    "region": "England",
+    "tags": [
+      "fear",
+      "travel"
+    ]
+  },
+  {
+    "title": "The Celebrated Jumping Frog of Calaveras County",
+    "author_name": "Mark Twain",
+    "year": 1865,
+    "category": "story",
+    "source_name": "Wikisource",
+    "source_url": "https://en.wikisource.org/wiki/The%20Celebrated%20Jumping%20Frog%20of%20Calaveras%20County%2C%20and%20Other%20Sketches/The%20Celebrated%20Jumping%20Frog%20of%20Calaveras%20County",
     "region": "United States",
-    "tags": ["defiance", "race", "resistance", "war"]
+    "tags": [
+      "humor",
+      "tall tale"
+    ]
+  },
+  {
+    "title": "Art and Heart",
+    "author_name": "Wilcox, Ella Wheeler",
+    "year": null,
+    "author_death_year": 1919,
+    "category": "poem",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/files/19577/19577.txt",
+    "region": "",
+    "tags": [
+      "poetry"
+    ]
+  },
+  {
+    "title": "Twas the Night before Christmas: A Visit from St. Nicholas",
+    "author_name": "Moore, Clement Clarke",
+    "year": null,
+    "author_death_year": 1863,
+    "category": "poem",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/17135.txt.utf-8",
+    "region": "",
+    "tags": [
+      "children's poetry, american",
+      "christmas",
+      "narrative poetry",
+      "santa claus"
+    ]
+  },
+  {
+    "title": "A Modest Proposal: For preventing the children of poor people in Ireland, from being a burden on their parents or country, and for making them beneficial to the publick",
+    "author_name": "Swift, Jonathan",
+    "year": null,
+    "author_death_year": 1745,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/1080.txt.utf-8",
+    "region": "",
+    "tags": [
+      "ireland",
+      "political satire, english",
+      "religious satire, english"
+    ]
+  },
+  {
+    "title": "As a man thinketh",
+    "author_name": "Allen, James",
+    "year": null,
+    "author_death_year": 1912,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/4507.txt.utf-8",
+    "region": "",
+    "tags": [
+      "conduct of life",
+      "new thought"
+    ]
+  },
+  {
+    "title": "The Practice of the Presence of God",
+    "author_name": "Lawrence, of the Resurrection, Brother",
+    "year": null,
+    "author_death_year": 1691,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/5657.txt.utf-8",
+    "region": "",
+    "tags": [
+      "christian life",
+      "spiritual life"
+    ]
+  },
+  {
+    "title": "The Declaration of Independence of the United States of America",
+    "author_name": "Jefferson, Thomas",
+    "year": null,
+    "author_death_year": 1826,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/1.txt.utf-8",
+    "region": "",
+    "tags": [
+      "united states"
+    ]
+  },
+  {
+    "title": "Franklin's Way to Wealth; or, \"Poor Richard Improved\"",
+    "author_name": "Franklin, Benjamin",
+    "year": null,
+    "author_death_year": 1790,
+    "category": "essay",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/43855.txt.utf-8",
+    "region": "",
+    "tags": [
+      "maxims, american",
+      "success"
+    ]
+  },
+  {
+    "title": "The Shunned House",
+    "author_name": "Lovecraft, H. P. (Howard Phillips)",
+    "year": null,
+    "author_death_year": 1937,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/31469.txt.utf-8",
+    "region": "",
+    "tags": [
+      "haunted houses",
+      "horror tales, american"
+    ]
+  },
+  {
+    "title": "The Damned Thing: 1898, From \"In the Midst of Life\"",
+    "author_name": "Bierce, Ambrose",
+    "year": null,
+    "author_death_year": 1913,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/23172.txt.utf-8",
+    "region": "",
+    "tags": [
+      "horror tales",
+      "short stories"
+    ]
+  },
+  {
+    "title": "The call of Cthulhu",
+    "author_name": "Lovecraft, H. P. (Howard Phillips)",
+    "year": null,
+    "author_death_year": 1937,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/68283.txt.utf-8",
+    "region": "",
+    "tags": [
+      "horror tales"
+    ]
+  },
+  {
+    "title": "A Martian Odyssey",
+    "author_name": "Weinbaum, Stanley G. (Stanley Grauman)",
+    "year": null,
+    "author_death_year": 1935,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/23731.txt.utf-8",
+    "region": "",
+    "tags": [
+      "mars (planet)",
+      "science fiction"
+    ]
+  },
+  {
+    "title": "Shadows in Zamboula",
+    "author_name": "Howard, Robert E. (Robert Ervin)",
+    "year": null,
+    "author_death_year": 1936,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/42196.txt.utf-8",
+    "region": "",
+    "tags": [
+      "conan (fictitious character)",
+      "fantasy fiction, american"
+    ]
+  },
+  {
+    "title": "Shadows in the Moonlight",
+    "author_name": "Howard, Robert E. (Robert Ervin)",
+    "year": null,
+    "author_death_year": 1936,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/42188.txt.utf-8",
+    "region": "",
+    "tags": [
+      "conan (fictitious character)",
+      "fantasy fiction, american"
+    ]
+  },
+  {
+    "title": "A municipal feud",
+    "author_name": "Haycox, Ernest",
+    "year": null,
+    "author_death_year": 1950,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/78086.txt.utf-8",
+    "region": "",
+    "tags": [
+      "male friendship",
+      "short stories",
+      "western stories"
+    ]
+  },
+  {
+    "title": "The Old Lady flies",
+    "author_name": "Whitfield, Raoul",
+    "year": null,
+    "author_death_year": 1945,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/78035.txt.utf-8",
+    "region": "",
+    "tags": [
+      "air pilots",
+      "motion picture industry",
+      "short stories",
+      "stunt flying"
+    ]
+  },
+  {
+    "title": "Borrowed feathers",
+    "author_name": "Lamb, Ruth",
+    "year": null,
+    "author_death_year": 1916,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/78051.txt.utf-8",
+    "region": "",
+    "tags": [
+      "love stories",
+      "rings",
+      "short stories",
+      "young women"
+    ]
+  },
+  {
+    "title": "A young man's story",
+    "author_name": "Doudney, Sarah",
+    "year": null,
+    "author_death_year": 1926,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/78060.txt.utf-8",
+    "region": "",
+    "tags": [
+      "betrothal",
+      "england",
+      "man-woman relationships",
+      "short stories"
+    ]
+  },
+  {
+    "title": "False face",
+    "author_name": "Haycox, Ernest",
+    "year": null,
+    "author_death_year": 1950,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/76931.txt.utf-8",
+    "region": "",
+    "tags": [
+      "man-woman relationships",
+      "oregon",
+      "short stories",
+      "theft"
+    ]
+  },
+  {
+    "title": "The life-eater",
+    "author_name": "Ward, Harold",
+    "year": null,
+    "author_death_year": 1950,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/76539.txt.utf-8",
+    "region": "",
+    "tags": [
+      "horror tales",
+      "louisiana",
+      "short stories",
+      "swamps"
+    ]
+  },
+  {
+    "title": "The Arctic legions",
+    "author_name": "Smith, A. De Herries (Augustus De Herries)",
+    "year": null,
+    "author_death_year": 1945,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/76834.txt.utf-8",
+    "region": "",
+    "tags": [
+      "canada, northern",
+      "caribou",
+      "racially mixed people",
+      "royal canadian mounted police"
+    ]
+  },
+  {
+    "title": "Blue eyes and diamonds",
+    "author_name": "De Bra, Lemuel",
+    "year": null,
+    "author_death_year": 1954,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/76713.txt.utf-8",
+    "region": "",
+    "tags": [
+      "detectives",
+      "necklaces",
+      "short stories",
+      "spouses"
+    ]
+  },
+  {
+    "title": "Struwwelpeter: Merry Stories and Funny Pictures",
+    "author_name": "Hoffmann, Heinrich",
+    "year": null,
+    "author_death_year": 1894,
+    "category": "story",
+    "source_name": "Project Gutenberg",
+    "source_url": "https://www.gutenberg.org/ebooks/12116.txt.utf-8",
+    "region": "",
+    "tags": [
+      "behavior",
+      "children",
+      "children's poetry, german",
+      "children's stories, german"
+    ]
   }
 ]
