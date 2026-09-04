@@ -137,7 +137,7 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
           )}
           <ConfirmSubmitButton
             confirmMessage={`Promote "${candidate.title}" and make it live? This starts showing up in the daily rotation.`}
-            className="bg-yellow px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-black hover:opacity-80"
+            className="rounded-full border border-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
           >
             Promote
           </ConfirmSubmitButton>

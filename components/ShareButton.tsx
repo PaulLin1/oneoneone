@@ -43,7 +43,7 @@ export function ShareButton({ selection }: { selection: DailySelection }) {
     <button
       type="button"
       onClick={handleShare}
-      className="bg-yellow px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80"
+      className="rounded-full border border-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
     >
       {copied ? "Copied ✓" : `Share #oneoneoneday${selection.day}`}
     </button>

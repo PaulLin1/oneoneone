@@ -71,7 +71,7 @@ export function ReadingView({
           authorName={work.author}
           accentBg={accent.bg}
           accentText={accent.text}
-          className="mt-6 h-40 w-40 border-2 border-ink sm:h-48 sm:w-48 lg:h-36 lg:w-36"
+          className="mt-6 h-40 w-40 overflow-hidden border-2 border-ink sm:h-48 sm:w-48 lg:h-36 lg:w-36"
           initialSizeClassName="text-6xl sm:text-7xl"
         />
 

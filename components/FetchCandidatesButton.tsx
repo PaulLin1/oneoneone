@@ -56,7 +56,7 @@ export function FetchCandidatesButton() {
         type="button"
         onClick={handleClick}
         disabled={pending}
-        className="bg-yellow px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80 disabled:opacity-50"
+        className="rounded-full border border-ink px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
       >
         {pending ? "Fetching…" : "Fetch new candidates"}
       </button>

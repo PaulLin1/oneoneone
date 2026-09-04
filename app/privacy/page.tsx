@@ -12,13 +12,13 @@ export default function PrivacyPage() {
           ← No. {currentDay}
         </Link>
         <h1 className="mt-4 text-3xl tracking-tight sm:text-4xl">Privacy &amp; Terms</h1>
-        <div className="mt-3 h-1.5 w-16 bg-yellow" aria-hidden="true" />
+        <div className="mt-3 h-1.5 w-16 bg-link" aria-hidden="true" />
       </div>
 
       <div className="space-y-10 border-t border-ink/15 pt-10 font-serif text-base leading-relaxed">
         <section>
           <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+            <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
             Privacy without an account
           </h2>
           <p className="mt-3">
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+            <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
             Privacy with an account
           </h2>
           <p className="mt-3">
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+            <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
             Terms
           </h2>
           <p className="mt-3">
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
-            <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+            <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
             Questions
           </h2>
           <p className="mt-3">

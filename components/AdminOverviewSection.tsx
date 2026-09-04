@@ -37,7 +37,7 @@ export function AdminOverviewSection({
     <>
       <section className="shrink-0 border border-ink/15">
         <div className="flex items-center gap-2 border-b border-ink/15 px-5 py-3">
-          <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
           <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
             Review queue
           </h2>
@@ -75,7 +75,7 @@ export function AdminOverviewSection({
 
       <section className="shrink-0 border border-ink/15">
         <div className="flex items-center gap-2 border-b border-ink/15 px-5 py-3">
-          <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
           <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">Catalog</h2>
         </div>
         <div className="max-h-72 overflow-y-auto p-5">

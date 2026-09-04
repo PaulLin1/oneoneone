@@ -3,7 +3,6 @@ import { Newsreader } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { Masthead } from "@/components/Masthead";
-import { Footer } from "@/components/Footer";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -64,7 +63,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Script>
         <Masthead />
         {children}
-        <Footer />
         <Analytics />
       </body>
     </html>

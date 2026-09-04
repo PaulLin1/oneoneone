@@ -1,60 +1,16 @@
 @import "tailwindcss";
+@import "./tokens.css";
 @plugin "@tailwindcss/typography";
 
 /*
-  Curwen Sans / K-Type Icon are paid fonts (k-type.com) — no license file
-  present, so these @font-face rules are inert until real files are added.
-  Drop licensed woff2 files at the paths below and they activate with zero
-  other changes; until then the sans stack falls through to Helvetica Neue.
-*/
-@font-face {
-  font-family: "Curwen Sans";
-  src: url("/fonts/CurwenSans-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Curwen Sans";
-  src: url("/fonts/CurwenSans-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: "K-Type Icon";
-  src: url("/fonts/KTypeIcon.woff2") format("woff2");
-  font-display: swap;
-}
-
-:root {
-  --color-paper: #ffffff;
-  --color-ink: #000000;
-  --color-ink-soft: #777774;
-  --color-near-black: #242325;
-  --color-yellow: #f1eb2b;
-  --color-yellow-pale: #f7f7b0;
-  --color-blue: #189fd5;
-  --color-pink: #d7157e;
-  --color-purple: #a038c2;
-  --scrollbar-thumb: rgba(0, 0, 0, 0.25);
-  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.45);
-}
-
-/*
-  Only the page canvas (paper/ink/ink-soft) flips — the brand marks (the
-  yellow masthead bar, category colors, CTA buttons on bg-yellow) are a
-  fixed identity in both modes, same as the "don't reuse category colors"
-  rule elsewhere in this file. Applied as a class (not prefers-color-scheme
+  Color tokens live in ./tokens.css (imported above) — the shared source of
+  truth across linpaul.com, oneoneone and social-media-sandbox. The system is
+  black on white; the accents (navy/red/cyan/iris/yellow) are fixed identity
+  and never touch the chrome. tokens.css also defines the `.dark` overrides:
+  only paper↔ink flip. It's applied as a class (not prefers-color-scheme
   alone) so an explicit toggle can override the system preference; see
   components/ThemeToggle.tsx and the no-flash script in app/layout.tsx.
 */
-.dark {
-  --color-paper: var(--color-near-black);
-  --color-ink: #f4f3ee;
-  --color-ink-soft: #a3a19b;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.3);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
-}
-
 .dark body {
   color-scheme: dark;
 }
@@ -64,28 +20,101 @@
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
   --color-near-black: var(--color-near-black);
+  --color-rule: var(--color-rule);
+  --color-wash: var(--color-wash);
+  --color-navy: var(--color-navy);
+  --color-red: var(--color-red);
+  --color-cyan: var(--color-cyan);
+  --color-iris: var(--color-iris);
   --color-yellow: var(--color-yellow);
-  --color-yellow-pale: var(--color-yellow-pale);
-  --color-blue: var(--color-blue);
-  --color-pink: var(--color-pink);
-  --color-purple: var(--color-purple);
-  --font-sans:
-    "Curwen Sans", "K-Type Icon", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --color-link: var(--color-link); /* = navy; `text-link` for inline links */
+  /* Shared UI/sans face — Helvetica Neue, from ./tokens.css. */
+  --font-sans: var(--font-sans);
+  /* oneoneone's one sanctioned deviation: Newsreader for running prose only. */
   --font-serif: var(--font-literary-serif);
+}
+
+/* The type law (see design-system/DESIGN.md): NO BOLD, NO ALL-CAPS. Every
+   font-weight utility (font-medium, font-semibold, font-bold, …) collapses to
+   the one body weight; `uppercase` becomes a no-op; the letterspacing that
+   went with the retired all-caps label look is zeroed. Unlayered, so these
+   win over Tailwind's utilities without !important, and every existing
+   className stays put. */
+@theme {
+  --font-weight-thin: var(--font-weight-body);
+  --font-weight-extralight: var(--font-weight-body);
+  --font-weight-light: var(--font-weight-body);
+  --font-weight-normal: var(--font-weight-body);
+  --font-weight-medium: var(--font-weight-body);
+  --font-weight-semibold: var(--font-weight-body);
+  --font-weight-bold: var(--font-weight-body);
+  --font-weight-extrabold: var(--font-weight-body);
+  --font-weight-black: var(--font-weight-body);
+}
+
+.uppercase {
+  text-transform: none;
+}
+
+/* The type law reaches into rich text: the typography plugin sets prose
+   headings, <strong>, <code> and <th> bold — pull them all back to the body
+   weight. Unlayered, so it beats the plugin's layered rules. */
+.prose :is(h1, h2, h3, h4, h5, h6, strong, b, th, code),
+.prose :is(h1, h2, h3, h4, h5, h6) strong {
+  font-weight: var(--font-weight-body);
+}
+
+/* Positive letter-spacing utilities (tracking-[0.1em] … [0.2em]) — not
+   tracking-tight / -[-0.01em] on wordmarks. */
+[class*="tracking-[0."] {
+  letter-spacing: normal;
 }
 
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-body);
   color-scheme: light;
+}
+
+/* Soft corners, family-wide (linpaul.com does the same). Applied broadly here
+   so components pick it up without a `rounded-*` class on each one: buttons,
+   fields, bordered cards/panels, the solid-fill marks (badges, dots, rules)
+   and images. Unlayered, so it wins over Tailwind's utilities. */
+button,
+input,
+textarea,
+select,
+[class~="border"],
+[class~="border-2"],
+[class*="bg-cyan"],
+[class*="bg-red"],
+[class*="bg-iris"] {
+  border-radius: var(--radius);
+}
+
+/* Full-bleed surfaces, and the small decorative marks (title rules, section
+   dots) which read better with hard corners. */
+body,
+header,
+main,
+[class~="bg-navy"],
+[class~="bg-link"] {
+  border-radius: 0;
+}
+
+/* Explicit pills win — the rules above are unlayered, so they'd otherwise
+   override Tailwind's layered `rounded-full` utility. (linpaul-style buttons.) */
+[class~="rounded-full"] {
+  border-radius: 9999px;
 }
 
 .prose-reading {
   --tw-prose-body: var(--color-ink);
   --tw-prose-headings: var(--color-ink);
   --tw-prose-bold: var(--color-ink);
-  --tw-prose-links: var(--color-ink);
+  --tw-prose-links: var(--color-link); /* navy — the one accent in the reading column */
   --tw-prose-quotes: var(--color-ink-soft);
 }
 

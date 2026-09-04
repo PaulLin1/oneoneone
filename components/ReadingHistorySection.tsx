@@ -56,7 +56,7 @@ export function ReadingHistorySection({
       {adminContent}
       <section className="shrink-0 border border-ink/15">
         <div className="flex items-center gap-2 border-b border-ink/15 px-5 py-3">
-          <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
           <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">Overview</h2>
         </div>
         <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -76,7 +76,7 @@ export function ReadingHistorySection({
           </div>
           <Link
             href="/recommend"
-            className="shrink-0 bg-yellow px-5 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80"
+            className="shrink-0 rounded-full border border-ink px-5 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
           >
             Recommend a work
           </Link>
@@ -85,7 +85,7 @@ export function ReadingHistorySection({
 
       <section className="shrink-0 border border-ink/15">
         <div className="flex items-center gap-2 border-b border-ink/15 px-5 py-3">
-          <span className="h-2.5 w-2.5 shrink-0 bg-ink" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
           <h2 className="font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
             Reading history
           </h2>

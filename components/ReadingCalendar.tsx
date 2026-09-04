@@ -307,7 +307,7 @@ export function ReadingCalendar({
                               type="button"
                               disabled={pending === entry.id}
                               onClick={() => handleClear(entry.id)}
-                              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-pink disabled:opacity-50"
+                              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-red disabled:opacity-50"
                             >
                               Clear
                             </button>
@@ -348,7 +348,7 @@ export function ReadingCalendar({
                           type="button"
                           disabled={isAdding}
                           onClick={() => handleSaveExternal(category)}
-                          className="border-2 border-ink bg-yellow px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80 disabled:opacity-50"
+                          className="rounded-full border border-ink px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
                         >
                           {isAdding ? "Saving…" : "Save"}
                         </button>
@@ -362,7 +362,7 @@ export function ReadingCalendar({
         </div>
       </div>
 
-      {error && <p className="shrink-0 text-sm text-pink">{error}</p>}
+      {error && <p className="shrink-0 text-sm text-red">{error}</p>}
     </div>
   );
 }

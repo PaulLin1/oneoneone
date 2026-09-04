@@ -8,7 +8,7 @@ export default async function RecommendPage() {
     return (
       <main className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col items-center justify-center px-6 py-16 sm:px-10 sm:py-20">
         <div className="w-full max-w-md border-2 border-ink">
-          <div className="h-2.5 bg-yellow" aria-hidden="true" />
+          <div className="h-2.5 bg-link" aria-hidden="true" />
           <div className="flex flex-col items-center gap-4 px-6 py-10 text-center sm:px-10">
             <h1 className="text-3xl tracking-tight sm:text-4xl">Recommend a work</h1>
             <p className="font-serif text-base leading-relaxed text-ink-soft">
@@ -23,7 +23,7 @@ export default async function RecommendPage() {
             >
               <button
                 type="submit"
-                className="border-2 border-ink bg-yellow px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80"
+                className="rounded-full border border-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
               >
                 Sign in with Google
               </button>

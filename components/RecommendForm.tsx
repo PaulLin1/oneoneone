@@ -56,7 +56,7 @@ export function RecommendForm() {
     <>
       <div className="mb-10">
         <h1 className="text-3xl tracking-tight sm:text-4xl">Recommend a work</h1>
-        <div className="mt-3 h-1.5 w-16 bg-yellow" aria-hidden="true" />
+        <div className="mt-3 h-1.5 w-16 bg-link" aria-hidden="true" />
         <p className="mt-4 max-w-lg font-serif text-base leading-relaxed text-ink-soft">
           Every recommendation goes through the same review as anything else that reaches the
           catalog — public domain only, verified before it&apos;s ever published (see{" "}
@@ -151,12 +151,12 @@ export function RecommendForm() {
             />
           </div>
 
-          {errorMessage && <p className="text-sm text-pink">{errorMessage}</p>}
+          {errorMessage && <p className="text-sm text-red">{errorMessage}</p>}
 
           <button
             type="submit"
             disabled={status === "sending"}
-            className="border-2 border-ink bg-yellow px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-black transition-opacity hover:opacity-80 disabled:opacity-50"
+            className="rounded-full border border-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
           >
             {status === "sending" ? "Sending…" : "Submit"}
           </button>
