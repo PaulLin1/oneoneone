@@ -52,6 +52,18 @@
      back to Arial (regular). Nothing heavier anywhere — the type law. */
   --font-weight-body: 300;
   --focus-ring: 2px solid var(--color-ink);
+
+  /* Fluid type scale — originated in linpaul.com, now the shared reference for
+     any UI text sized off it (the masthead nav in particular: wordmark at
+     --step-1, nav pills at --step--1). Every clamp() interpolates between a
+     ~360px phone and a ~1440px desktop, so nothing snaps at a breakpoint. */
+  --step--1: clamp(0.78rem, 0.74rem + 0.18vw, 0.88rem);
+  --step-0: clamp(0.94rem, 0.90rem + 0.20vw, 1.05rem);
+  --step-1: clamp(1.08rem, 0.98rem + 0.45vw, 1.35rem);
+  --step-2: clamp(1.40rem, 1.12rem + 1.20vw, 2.10rem);
+
+  /* Solid hover fill for paper chips/pills — never transparent. */
+  --tile-hover: #f0f0f0;
 }
 
 /* Dark mode: paper↔ink invert, chrome grays track. Accents do NOT change.
@@ -68,6 +80,7 @@
   /* The five accents are fixed — but navy is too dark to read on the dark
      canvas, so the link/mark accent (only) lightens. Still navy in character. */
   --color-link: #6b8fd6;
+  --tile-hover: #2c2c2c;
 }
 
 /* -----------------------------------------------------------------------------
