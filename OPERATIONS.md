@@ -103,7 +103,9 @@ force-push or rewrite history on `main` — revert forward.
 ## The automated daily pipeline
 
 `content-pipeline.yml` (workflow name: **Daily pipeline**) runs once a day
-(13:00 UTC) and publishes that day's reading, unattended: a Claude Code
+(00:10 UTC, just after the UTC calendar day — which is also what "today"
+means everywhere else in the app — flips) and publishes that day's reading,
+unattended: a Claude Code
 agent discovers three brand-new public-domain works on the open web (one
 poem, one essay, one story), writes their descriptions, promotes them into
 `works`, pins them to today's date in `daily_picks` (via

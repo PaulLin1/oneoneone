@@ -14,7 +14,14 @@ name: Daily pipeline
 #                      earlier run couldn't get a usable image for.
 on:
   schedule:
-    - cron: "0 13 * * *" # every day, 13:00 UTC
+    # Shortly after UTC midnight, not mid-day: "today" (lib/dateMath.todayIso,
+    # the same UTC calendar date for every reader) flips at 00:00 UTC, and
+    # the site has nothing to show for the new day until this run finishes.
+    # Running at 13:00 UTC left a ~13-hour gap every night where the site
+    # was already on a new "today" with no picks for it yet (a 503 "not
+    # published" that reads as broken, not just early) — running here
+    # instead shrinks that gap to this job's own run time (~15-20 min).
+    - cron: "10 0 * * *" # every day, 00:10 UTC
   workflow_dispatch:
     inputs:
       mode:

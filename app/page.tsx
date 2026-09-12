@@ -5,7 +5,7 @@ import { formatDisplayDate } from "@/lib/dateMath";
 import { CategoryColumn } from "@/components/CategoryColumn";
 
 export default function Home() {
-  const { loading, isSlow, error, retry, dayNumber, todaySelection } = useLocalState();
+  const { loading, isSlow, error, notPublished, retry, dayNumber, todaySelection } = useLocalState();
 
   if (loading && !todaySelection) {
     return (
@@ -19,6 +19,21 @@ export default function Home() {
           {isSlow
             ? "Still loading — the database is waking up, hang tight…"
             : "Loading today's three…"}
+        </p>
+      </main>
+    );
+  }
+
+  if (notPublished) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
+        <div className="flex gap-2" aria-hidden="true">
+          <span className="h-3 w-3 animate-pulse bg-cyan [animation-delay:0ms]" />
+          <span className="h-3 w-3 animate-pulse bg-red [animation-delay:150ms]" />
+          <span className="h-3 w-3 animate-pulse bg-iris [animation-delay:300ms]" />
+        </div>
+        <p className="text-sm text-ink-soft">
+          Today&apos;s reading is still being put together — check back shortly.
         </p>
       </main>
     );

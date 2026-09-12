@@ -45,6 +45,8 @@ async function fetchWithTimeout(url: string): Promise<Response> {
 // whichever fetch is already in flight.
 let inFlightSelection: Promise<DailySelection> | null = null;
 
+class NotPublishedError extends Error {}
+
 async function fetchTodaysSelection(): Promise<DailySelection> {
   if (inFlightSelection) return inFlightSelection;
 
@@ -52,7 +54,9 @@ async function fetchTodaysSelection(): Promise<DailySelection> {
     const res = await fetchWithTimeout("/api/daily-selection");
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.error ?? `Request failed with status ${res.status}`);
+      const message = body.error ?? `Request failed with status ${res.status}`;
+      if (res.status === 503) throw new NotPublishedError(message);
+      throw new Error(message);
     }
     return res.json();
   })();
@@ -71,6 +75,11 @@ export function useLocalState() {
   // instead of leaving a bare spinner that's indistinguishable from stuck.
   const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Distinct from `error`: the daily pipeline runs shortly after UTC
+  // midnight (content-pipeline.yml) and can take up to ~20 minutes, so a
+  // brand-new "today" with nothing pinned yet is expected, not a failure —
+  // it gets its own quiet, auto-retrying state instead of an error banner.
+  const [notPublished, setNotPublished] = useState(false);
 
   const initialize = useCallback(async () => {
     const today = todayIso();
@@ -84,6 +93,7 @@ export function useLocalState() {
 
     setLoading(true);
     setError(null);
+    setNotPublished(false);
     setIsSlow(false);
     const slowTimer = setTimeout(() => setIsSlow(true), 4000);
     try {
@@ -91,7 +101,11 @@ export function useLocalState() {
       writeToStorage({ today: fresh });
       setSelection(fresh);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load today's readings.");
+      if (err instanceof NotPublishedError) {
+        setNotPublished(true);
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to load today's readings.");
+      }
     } finally {
       clearTimeout(slowTimer);
       setLoading(false);
@@ -106,10 +120,17 @@ export function useLocalState() {
     void initialize();
   }, [initialize]);
 
+  useEffect(() => {
+    if (!notPublished) return;
+    const timer = setInterval(() => void initialize(), 30_000);
+    return () => clearInterval(timer);
+  }, [notPublished, initialize]);
+
   return {
     loading,
     isSlow,
     error,
+    notPublished,
     retry: initialize,
     dayNumber: selection?.day ?? null,
     todaySelection: selection,
