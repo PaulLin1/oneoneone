@@ -64,18 +64,8 @@ async function fetchTodaysSelection(): Promise<DailySelection> {
   }
 }
 
-async function fetchRandomWork(category: WorkCategory, excludeId: string): Promise<Work> {
-  const res = await fetch(`/api/randomize?category=${category}&exclude=${excludeId}`);
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Request failed with status ${res.status}`);
-  }
-  return res.json();
-}
-
 export function useLocalState() {
   const [selection, setSelection] = useState<DailySelection | null>(null);
-  const [randomized, setRandomized] = useState<Partial<Record<WorkCategory, Work>>>({});
   const [loading, setLoading] = useState(true);
   // Flips true if loading takes a while, so the UI can say "still working"
   // instead of leaving a bare spinner that's indistinguishable from stuck.
@@ -88,7 +78,6 @@ export function useLocalState() {
 
     if (cached?.today && cached.today.date === today) {
       setSelection(cached.today);
-      setRandomized(cached.randomized ?? {});
       setLoading(false);
       return;
     }
@@ -99,11 +88,8 @@ export function useLocalState() {
     const slowTimer = setTimeout(() => setIsSlow(true), 4000);
     try {
       const fresh = await fetchTodaysSelection();
-      // A new day always starts with no shuffles — randomized never carries
-      // across the date rollover, same as `today` itself getting replaced.
-      writeToStorage({ today: fresh, randomized: {} });
+      writeToStorage({ today: fresh });
       setSelection(fresh);
-      setRandomized({});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load today's readings.");
     } finally {
@@ -120,33 +106,6 @@ export function useLocalState() {
     void initialize();
   }, [initialize]);
 
-  const randomizeCategory = useCallback(
-    async (category: WorkCategory) => {
-      if (!selection) return;
-      const excludeId = (randomized[category] ?? selection[category]).id;
-      const pick = await fetchRandomWork(category, excludeId);
-      setRandomized((prev) => {
-        const next = { ...prev, [category]: pick };
-        writeToStorage({ today: selection, randomized: next });
-        return next;
-      });
-    },
-    [selection, randomized]
-  );
-
-  const resetRandomized = useCallback(
-    (category: WorkCategory) => {
-      if (!selection) return;
-      setRandomized((prev) => {
-        const next = { ...prev };
-        delete next[category];
-        writeToStorage({ today: selection, randomized: next });
-        return next;
-      });
-    },
-    [selection]
-  );
-
   return {
     loading,
     isSlow,
@@ -154,9 +113,6 @@ export function useLocalState() {
     retry: initialize,
     dayNumber: selection?.day ?? null,
     todaySelection: selection,
-    getWork: (category: WorkCategory): Work | null => randomized[category] ?? selection?.[category] ?? null,
-    isRandomized: (category: WorkCategory): boolean => Boolean(randomized[category]),
-    randomizeCategory,
-    resetRandomized,
+    getWork: (category: WorkCategory): Work | null => selection?.[category] ?? null,
   };
 }

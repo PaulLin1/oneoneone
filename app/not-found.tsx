@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="rounded-full border border-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
+        className="px-1 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:underline"
       >
         Back to today
       </Link>

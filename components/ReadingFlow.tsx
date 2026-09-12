@@ -20,7 +20,6 @@ export function ReadingFlow({
   backHref,
   backLabel,
   progressHrefs,
-  shuffle,
 }: {
   work: Work;
   category: WorkCategory;
@@ -32,8 +31,6 @@ export function ReadingFlow({
   backHref: string;
   backLabel: string;
   progressHrefs: Record<WorkCategory, string>;
-  /** Opt-in per-reader alternate pick — only wired into today's /read flow, never archive. */
-  shuffle?: { isRandomized: boolean; onShuffle: () => void; onReset: () => void };
 }) {
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 sm:px-10">
@@ -42,20 +39,11 @@ export function ReadingFlow({
           ← {backLabel}
         </Link>
         <div className="flex items-center gap-4">
-          {shuffle && (
-            <button
-              type="button"
-              onClick={shuffle.isRandomized ? shuffle.onReset : shuffle.onShuffle}
-              className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink"
-            >
-              {shuffle.isRandomized ? "Back to today's pick" : "Shuffle"}
-            </button>
-          )}
           <ReadingProgress current={category} hrefs={progressHrefs} />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto border-t-2 border-ink py-10">
+      <div className="flex-1 overflow-y-auto py-10">
         <ReadingView work={work} readDate={readDate} source={source} sourceDate={sourceDate} />
       </div>
     </main>

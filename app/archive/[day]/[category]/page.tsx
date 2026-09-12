@@ -1,10 +1,9 @@
 import { notFound, redirect } from "next/navigation";
-import { getDb } from "@/lib/db";
-import { selectDailyWorks } from "@/lib/selection/algorithm";
+import { getDailySelection } from "@/lib/dailyPicks";
 import { dateForDay, globalDayNumber } from "@/lib/epoch";
 import { todayIso } from "@/lib/dateMath";
 import { ReadingFlow } from "@/components/ReadingFlow";
-import type { Work, WorkCategory } from "@/lib/types";
+import type { WorkCategory } from "@/lib/types";
 
 const ORDER: WorkCategory[] = ["poem", "essay", "story"];
 
@@ -26,10 +25,9 @@ export default async function ArchiveReadPage({
   // Today isn't archived yet — send this into today's own reading flow.
   if (day === currentDay) redirect(`/read/${categoryParam}`);
 
-  const sql = getDb();
-  const works = (await sql`select * from works_feed where is_active = true`) as unknown as Work[];
   const date = dateForDay(day);
-  const selection = selectDailyWorks({ date, works });
+  const selection = await getDailySelection(date);
+  if (!selection) notFound();
 
   const category = categoryParam;
   const work = selection[category];

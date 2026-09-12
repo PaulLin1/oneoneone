@@ -22,9 +22,10 @@ function realPool(): Pool {
  * `lib/auth.ts` is imported by the Masthead, which is in the root layout,
  * so this runs for every route in the app, including at `next build` time
  * for route analysis. A real `new Pool()` there would need DATABASE_URL
- * just to *build*, breaking the guarantee documented in README's "Deploy
- * to Vercel" section. This Proxy defers actually touching the env var (and
- * constructing the real Pool) until the adapter first calls `.query(...)`
+ * just to *build* — but `next build` is meant to run without any database
+ * env var set (see the note in `OPERATIONS.md` and `ci.yml`, which builds
+ * with no `DATABASE_URL`). This Proxy defers actually touching the env var
+ * (and constructing the real Pool) until the adapter first calls `.query(...)`
  * on it — which only happens inside a request, never at build time.
  */
 export function getAuthPool(): Pool {

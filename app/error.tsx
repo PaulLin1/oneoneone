@@ -18,13 +18,13 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         <button
           type="button"
           onClick={reset}
-          className="rounded-full border border-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
+          className="px-1 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:underline"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="border border-ink/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:border-ink"
+          className="px-1 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:underline"
         >
           Back to today
         </Link>

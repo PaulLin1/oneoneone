@@ -42,13 +42,6 @@ const DailySelectionSchema = z.object({
 
 export const LocalStateSchema = z.object({
   today: DailySelectionSchema.nullable(),
-  // Per-reader "shuffle" overrides — kept as a separate top-level key, never
-  // nested inside `today`, so Archive/Share (which only ever read `today`)
-  // can't accidentally pick up a shuffled pick. Cleared on date rollover
-  // alongside `today`, same as initialize() already does.
-  randomized: z
-    .object({ poem: WorkSchema.optional(), essay: WorkSchema.optional(), story: WorkSchema.optional() })
-    .optional(),
 });
 
 export type LocalState = z.infer<typeof LocalStateSchema>;

@@ -43,7 +43,9 @@
   --color-link: var(--color-navy);
 
   /* --- Non-color primitives ------------------------------------------------ */
-  --radius: 0.5rem; /* soft corners, family-wide — cards, chips, fields, images */
+  --radius: 0; /* square, family-wide — no boxes, no chips */
+  --radius-pill: 999px; /* reserved for literal circles (a dot, an avatar) —
+                            nothing is pill-shaped chrome anymore */
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Light Helvetica — like the original linpaul.com, and about as close to
@@ -62,8 +64,13 @@
   --step-1: clamp(1.08rem, 0.98rem + 0.45vw, 1.35rem);
   --step-2: clamp(1.40rem, 1.12rem + 1.20vw, 2.10rem);
 
-  /* Solid hover fill for paper chips/pills — never transparent. */
+  /* Solid hover fill — used where a background wash is still wanted (not on
+     linpaul.com's own nav/tiles anymore, which use underline instead). */
   --tile-hover: #f0f0f0;
+
+  /* The page canvas. Kept as its own token (rather than just --color-paper)
+     since it's the one thing a themed surface might ever override. */
+  --surface-base: var(--color-paper);
 }
 
 /* Dark mode: paper↔ink invert, chrome grays track. Accents do NOT change.

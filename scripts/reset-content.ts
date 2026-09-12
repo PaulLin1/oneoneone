@@ -1,9 +1,9 @@
 import { getDb } from "@/lib/db";
 
 /**
- * Wipes all content (content_candidates, works, work_tags, authors, tags)
- * for a fresh launch, while preserving everything user-linked (users,
- * accounts, sessions, reading_history).
+ * Wipes all content (daily_picks, content_candidates, works, work_tags,
+ * authors, tags) for a fresh launch, while preserving everything user-linked
+ * (users, accounts, sessions, reading_history).
  *
  * reading_history rows pointing at a deleted work would otherwise violate
  * reading_history_source_check (it requires external_title to be set
@@ -19,7 +19,7 @@ import { getDb } from "@/lib/db";
 async function main() {
   if (process.argv[2] !== "--yes") {
     console.error(
-      "This permanently deletes every row in content_candidates, works, work_tags, authors, and tags.\n" +
+      "This permanently deletes every row in daily_picks, content_candidates, works, work_tags, authors, and tags.\n" +
         "users, accounts, sessions, and reading_history are preserved.\n\n" +
         "Re-run with --yes to confirm: npx tsx scripts/reset-content.ts --yes"
     );
@@ -36,12 +36,15 @@ async function main() {
     where rh.work_id = w.id
   `;
 
+  await sql`delete from daily_picks`;
   await sql`delete from content_candidates`;
   await sql`delete from works`;
   await sql`delete from authors`;
   await sql`delete from tags`;
 
-  console.log("Reset complete: content_candidates, works, work_tags, authors, tags are now empty.");
+  console.log(
+    "Reset complete: daily_picks, content_candidates, works, work_tags, authors, tags are now empty."
+  );
   console.log("users, accounts, sessions, and reading_history were preserved.");
 }
 

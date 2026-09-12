@@ -13,13 +13,18 @@ const STAGING_DIR = path.join(process.cwd(), "public", "authors", "_staging");
  * it to R2, and points authors.portrait_url at it. No git commit, no
  * redeploy: the next page load just picks up the new URL from the
  * database.
+ *
+ * By default it publishes public/authors/_staging/<slug>.png (the best-
+ * scoring candidate). Pass --variant=N to publish <slug>__NN.png instead,
+ * when the top-scored one isn't the best likeness.
  */
-async function publishOne(name: string): Promise<void> {
+async function publishOne(name: string, variant: number | null): Promise<void> {
   const slug = authorSlug(name);
-  const filePath = path.join(STAGING_DIR, `${slug}.png`);
+  const fileName = variant ? `${slug}__${String(variant).padStart(2, "0")}.png` : `${slug}.png`;
+  const filePath = path.join(STAGING_DIR, fileName);
 
   if (!existsSync(filePath)) {
-    console.error(`  ✗ ${name}: no staged file at public/authors/_staging/${slug}.png`);
+    console.error(`  ✗ ${name}: no staged file at public/authors/_staging/${fileName}`);
     return;
   }
 
@@ -36,22 +41,36 @@ async function publishOne(name: string): Promise<void> {
     return;
   }
 
-  unlinkSync(filePath);
-  console.log(`  ✓ ${name} → ${url}`);
+  // Clear every staged file for this author — the choice is made.
+  for (const file of readdirSync(STAGING_DIR)) {
+    if (file === `${slug}.png` || file === `${slug}.json` || file.startsWith(`${slug}__`)) {
+      unlinkSync(path.join(STAGING_DIR, file));
+    }
+  }
+  console.log(`  ✓ ${name}${variant ? ` (variant ${variant})` : ""} → ${url}`);
 }
 
 async function main() {
   const args = process.argv.slice(2);
+  const variantArg = args.find((a) => a.startsWith("--variant="));
+  const variant = variantArg ? Number(variantArg.slice("--variant=".length)) : null;
+  if (variantArg && (!Number.isInteger(variant) || variant! < 1)) {
+    console.error("--variant must be a positive integer (the NN in <slug>__NN.png).");
+    process.exitCode = 1;
+    return;
+  }
+
+  const staged = existsSync(STAGING_DIR) ? readdirSync(STAGING_DIR) : [];
+  const positional = args.filter((a) => !a.startsWith("--"));
   const names = args.includes("--all")
-    ? readdirSync(existsSync(STAGING_DIR) ? STAGING_DIR : "/dev/null")
-        .filter((f) => f.endsWith(".png"))
-        .map((f) => f.replace(/\.png$/, ""))
-    : args;
+    ? staged.filter((f) => f.endsWith(".png") && !f.includes("__")).map((f) => f.replace(/\.png$/, ""))
+    : positional;
 
   if (names.length === 0) {
     console.log("Usage:");
     console.log('  npm run publish-author-portrait -- "Edgar Allan Poe"');
-    console.log("  npm run publish-author-portrait -- --all   # publish everything currently staged");
+    console.log('  npm run publish-author-portrait -- "Edgar Allan Poe" --variant=3');
+    console.log("  npm run publish-author-portrait -- --all   # publish the best-scoring image for everything staged");
     process.exitCode = 1;
     return;
   }
@@ -68,7 +87,7 @@ async function main() {
 
   console.log(`Publishing ${resolvedNames.length} portrait(s)…\n`);
   for (const name of resolvedNames) {
-    await publishOne(name);
+    await publishOne(name, args.includes("--all") ? null : variant);
   }
 }
 

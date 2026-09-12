@@ -6,14 +6,10 @@
   Color tokens live in ./tokens.css (imported above) — the shared source of
   truth across linpaul.com, oneoneone and social-media-sandbox. The system is
   black on white; the accents (navy/red/cyan/iris/yellow) are fixed identity
-  and never touch the chrome. tokens.css also defines the `.dark` overrides:
-  only paper↔ink flip. It's applied as a class (not prefers-color-scheme
-  alone) so an explicit toggle can override the system preference; see
-  components/ThemeToggle.tsx and the no-flash script in app/layout.tsx.
+  and never touch the chrome. oneoneone is light-only, same as the other two
+  — tokens.css still carries a `.dark` block (it's generated), but nothing
+  ever puts that class on <html>, so it's inert.
 */
-.dark body {
-  color-scheme: dark;
-}
 
 @theme inline {
   --color-paper: var(--color-paper);
@@ -166,17 +162,4 @@ html {
 
 .marquee-track {
   animation: marquee linear infinite;
-}
-
-/* Light variant for scroll containers on dark backgrounds (e.g. Connections panel). */
-.scrollbar-dark {
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
-.scrollbar-dark::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-.scrollbar-dark::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.5);
 }

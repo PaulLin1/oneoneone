@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { buildReadingCalendar, type ReadingHistoryEntry } from "@/lib/readingCalendar";
 import { CATEGORY_ACCENT } from "@/lib/categoryColor";
@@ -32,7 +32,7 @@ function sourceLabel(entry: ReadingHistoryEntry): string {
     case "daily":
       return formatDisplayDate(entry.date);
     case "random":
-      return "Shuffled";
+      return "Related reading";
     case "archive":
       return entry.sourceDate ? `From ${formatDisplayDate(entry.sourceDate)}` : "From another day";
     case "external":
@@ -40,59 +40,20 @@ function sourceLabel(entry: ReadingHistoryEntry): string {
   }
 }
 
-async function addExternalEntry(payload: {
-  category: WorkCategory;
-  date: string;
-  externalTitle: string;
-  externalAuthor?: string;
-}): Promise<string> {
-  const res = await fetch("/api/reading-history/entry", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(body.error ?? "Couldn't save that.");
-  }
-  return body.id as string;
-}
-
-async function deleteEntry(id: string) {
-  const res = await fetch(`/api/reading-history/entry?id=${id}`, { method: "DELETE" });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? "Couldn't clear that.");
-  }
-}
-
 /**
  * Just the calendar + the selected day's detail panel — /account (via
- * ReadingHistorySection, which owns the `rows` state so it can also drive
- * the Overview stats from the same live data) is what wires this up. A
- * controlled component: `rows` is never copied into local state here, so
- * an add/clear immediately shows up wherever else `rows` is used.
+ * ReadingHistorySection) is what wires this up.
  */
 export function ReadingCalendar({
   today,
   weeks,
   rows,
-  onRowsChange,
 }: {
   today: string;
   weeks: number;
   rows: ReadingHistoryEntry[];
-  onRowsChange: Dispatch<SetStateAction<ReadingHistoryEntry[]>>;
 }) {
   const [selectedDate, setSelectedDate] = useState(today);
-  // An entry id while clearing it, or `${category}::add` while saving a new
-  // outside read — a slot can hold several entries now, so "which thing is
-  // this button doing something to" needs more than just category+date.
-  const [pending, setPending] = useState<string | null>(null);
-  const [openExternalFor, setOpenExternalFor] = useState<WorkCategory | null>(null);
-  const [extTitle, setExtTitle] = useState("");
-  const [extAuthor, setExtAuthor] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   const grid = useMemo(() => buildReadingCalendar(today, weeks, rows), [today, weeks, rows]);
   const selectedEntries = useMemo(() => {
@@ -102,60 +63,6 @@ export function ReadingCalendar({
     }
     return forDay;
   }, [rows, selectedDate]);
-
-  function selectDate(date: string) {
-    setSelectedDate(date);
-    setOpenExternalFor(null);
-    setError(null);
-  }
-
-  async function handleSaveExternal(category: WorkCategory) {
-    const title = extTitle.trim();
-    if (!title) {
-      setError("A title is required.");
-      return;
-    }
-    const addKey = `${category}::add`;
-    setPending(addKey);
-    setError(null);
-    try {
-      const author = extAuthor.trim() || undefined;
-      const id = await addExternalEntry({ category, date: selectedDate, externalTitle: title, externalAuthor: author });
-      onRowsChange((prev) => [
-        ...prev,
-        {
-          id,
-          date: selectedDate,
-          category,
-          title,
-          author: author ?? null,
-          workId: null,
-          source: "external",
-          sourceDate: null,
-        },
-      ]);
-      setOpenExternalFor(null);
-      setExtTitle("");
-      setExtAuthor("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setPending(null);
-    }
-  }
-
-  async function handleClear(id: string) {
-    setPending(id);
-    setError(null);
-    try {
-      await deleteEntry(id);
-      onRowsChange((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setPending(null);
-    }
-  }
 
   return (
     // Stacked on narrow screens; from lg up, the calendar sits beside the
@@ -211,7 +118,7 @@ export function ReadingCalendar({
                         <div key={day.date} className="group relative">
                           <button
                             type="button"
-                            onClick={() => selectDate(day.date)}
+                            onClick={() => setSelectedDate(day.date)}
                             aria-label={formatDisplayDate(day.date)}
                             className={`flex w-full overflow-hidden border transition-colors ${
                               day.date === selectedDate ? "border-ink" : "border-ink/10 hover:border-ink/30"
@@ -260,7 +167,7 @@ export function ReadingCalendar({
         </div>
       </div>
 
-      <div className="flex flex-col border-2 border-ink lg:w-96 lg:shrink-0">
+      <div className="flex flex-col lg:w-96 lg:shrink-0">
         <div className="shrink-0 bg-ink px-4 py-2 text-paper">
           <p className="text-xs font-semibold uppercase tracking-[0.15em]">{formatDisplayDate(selectedDate)}</p>
         </div>
@@ -269,8 +176,6 @@ export function ReadingCalendar({
           {CATEGORIES.map((category) => {
             const entries = selectedEntries[category];
             const accent = CATEGORY_ACCENT[category];
-            const isOpen = openExternalFor === category;
-            const isAdding = pending === `${category}::add`;
 
             return (
               <div key={category} className="py-2">
@@ -287,7 +192,7 @@ export function ReadingCalendar({
                     ) : (
                       <ul className="space-y-1.5">
                         {entries.map((entry) => (
-                          <li key={entry.id} className="flex items-start justify-between gap-2">
+                          <li key={entry.id}>
                             <div className="min-w-0">
                               {entry.workId ? (
                                 <Link
@@ -303,56 +208,9 @@ export function ReadingCalendar({
                                 {entry.author ?? "Unknown"} · {sourceLabel(entry)}
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              disabled={pending === entry.id}
-                              onClick={() => handleClear(entry.id)}
-                              className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-red disabled:opacity-50"
-                            >
-                              Clear
-                            </button>
                           </li>
                         ))}
                       </ul>
-                    )}
-
-                    <button
-                      type="button"
-                      disabled={isAdding}
-                      onClick={() => {
-                        setOpenExternalFor(isOpen ? null : category);
-                        setExtTitle("");
-                        setExtAuthor("");
-                        setError(null);
-                      }}
-                      className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink disabled:opacity-50"
-                    >
-                      + Outside read
-                    </button>
-
-                    {isOpen && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <input
-                          value={extTitle}
-                          onChange={(e) => setExtTitle(e.target.value)}
-                          placeholder="Title"
-                          className="min-w-0 flex-1 border-2 border-ink/20 bg-paper px-2.5 py-1.5 font-serif text-sm focus:border-ink focus:outline-none"
-                        />
-                        <input
-                          value={extAuthor}
-                          onChange={(e) => setExtAuthor(e.target.value)}
-                          placeholder="Author (optional)"
-                          className="min-w-0 flex-1 border-2 border-ink/20 bg-paper px-2.5 py-1.5 font-serif text-sm focus:border-ink focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          disabled={isAdding}
-                          onClick={() => handleSaveExternal(category)}
-                          className="rounded-full border border-ink px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
-                        >
-                          {isAdding ? "Saving…" : "Save"}
-                        </button>
-                      </div>
                     )}
                   </div>
                 </div>
@@ -361,8 +219,6 @@ export function ReadingCalendar({
           })}
         </div>
       </div>
-
-      {error && <p className="shrink-0 text-sm text-red">{error}</p>}
     </div>
   );
 }

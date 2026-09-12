@@ -10,9 +10,9 @@ export const maxDuration = 30;
 
 /**
  * "Upload your own" on /account's Catalog card — the guaranteed-to-work
- * path when auto-discovery (fetch-author-portrait.ts, via the
- * author-portraits.yml workflow) hasn't found anything usable for an
- * author yet. Runs the exact same digitization pass
+ * path when auto-discovery (fetch-author-portrait.ts, run by the daily
+ * pipeline's portrait step) hasn't found anything usable for an author
+ * yet. Runs the exact same digitization pass
  * (lib/portraitProcessing.ts) a reviewer already picking their own source
  * image, so there's no search/retry loop to run unattended — just process
  * and publish.

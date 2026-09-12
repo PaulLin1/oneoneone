@@ -40,7 +40,7 @@ export default async function WorkPage({
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto border-t-2 border-ink py-10">
+      <div className="flex-1 overflow-y-auto py-10">
         <ReadingView work={work} readDate={todayIso()} source="random" />
         <p className="mt-10 text-center text-xs text-ink-soft">
           Related reading — not one of that day&apos;s three.

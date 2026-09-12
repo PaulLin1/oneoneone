@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         <div className="mt-3 h-1.5 w-16 bg-link" aria-hidden="true" />
       </div>
 
-      <div className="space-y-10 border-t border-ink/15 pt-10 font-serif text-base leading-relaxed">
+      <div className="space-y-10 pt-10 font-serif text-base leading-relaxed">
         <section>
           <h2 className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-[0.15em] text-ink-soft">
             <span className="h-2.5 w-2.5 shrink-0 bg-link" aria-hidden="true" />
@@ -29,8 +29,7 @@ export default function PrivacyPage() {
             picks so a refresh doesn&apos;t re-fetch them. That entry never leaves your device. We
             do use Vercel Analytics to see aggregate page-view counts, it doesn&apos;t use cookies
             or track you individually, and we don&apos;t run anything else: no ad trackers, no
-            read-tracking, no other third-party scripts. The Share button just uses your
-            device&apos;s own share sheet or clipboard, so nothing routes through us.
+            read-tracking, no other third-party scripts.
           </p>
         </section>
 
@@ -49,11 +48,9 @@ export default function PrivacyPage() {
             >
               account page
             </Link>
-            . Nothing from before you signed up gets added retroactively. A work you recommend is
-            tied to your account too, so a reviewer can follow up if they have questions. Beyond
-            Google&apos;s sign-in and the aggregate Vercel Analytics described above, we don&apos;t
-            use any other third-party tool. The data stays in our database, visible only to you
-            and, for recommendations, whoever is reviewing the queue.
+            . Nothing from before you signed up gets added retroactively. Beyond Google&apos;s
+            sign-in and the aggregate Vercel Analytics described above, we don&apos;t use any
+            other third-party tool. The data stays in our database, visible only to you.
           </p>
         </section>
 

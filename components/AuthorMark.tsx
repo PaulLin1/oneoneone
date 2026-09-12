@@ -15,18 +15,16 @@ export function maskStyle(src: string): CSSProperties {
 
 /**
  * Renders the real portrait (a flat black-and-white PNG applied as a CSS
- * mask — see lib/authorPortraits.ts's authorSlug and the "Author
- * portraits" section in README.md) when one exists, or a generated
- * initial-letter mark when it doesn't.
+ * mask — see lib/authorPortraits.ts's authorSlug) when one exists, or a
+ * generated initial-letter mark when it doesn't.
  *
  * The initial is a stopgap for the short window between an author being
  * promoted and a real portrait getting published — not an accepted end
  * state. The actual target is a real photo for every author, always (see
- * "Author portraits" in README.md and the fetch/process/publish step in
- * content-pipeline.yml, which keeps trying alternate sources and a manual
- * crop rather than accepting the first failed attempt). Seeing an initial
- * in normal use means an author is still missing one, not that the design
- * intends it.
+ * the portrait step in content-pipeline.yml, which keeps trying alternate
+ * sources and a manual crop rather than accepting the first failed
+ * attempt). Seeing an initial in normal use means an author is still
+ * missing one, not that the design intends it.
  */
 export function AuthorMark({
   portraitUrl,

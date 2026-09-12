@@ -3,12 +3,12 @@
 import { useState } from "react";
 
 /**
- * Starts the author-portraits.yml GitHub Action — see app/api/admin/
- * trigger-author-portraits for why this dispatches the workflow instead of
- * running the portrait pipeline directly (it needs a real filesystem).
- * There's no run id to poll from a workflow_dispatch call, so this can only
- * confirm the request was accepted, not watch it finish — check the
- * Actions tab for progress.
+ * Starts the daily pipeline (content-pipeline.yml) in portraits-only mode
+ * — see app/api/admin/trigger-author-portraits for why this dispatches the
+ * workflow instead of running the portrait pipeline directly (it needs a
+ * real filesystem). There's no run id to poll from a workflow_dispatch
+ * call, so this can only confirm the request was accepted, not watch it
+ * finish — check the Actions tab for progress.
  */
 export function TriggerPortraitsButton() {
   const [pending, setPending] = useState(false);
@@ -17,7 +17,7 @@ export function TriggerPortraitsButton() {
   async function handleClick() {
     if (
       !window.confirm(
-        "Start the author-portraits workflow now? It runs on GitHub Actions and can take several minutes — check the Actions tab for progress."
+        "Start the portrait fill now? It runs the daily pipeline on GitHub Actions in portraits-only mode and can take several minutes — check the Actions tab for progress."
       )
     ) {
       return;

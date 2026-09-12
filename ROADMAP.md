@@ -6,9 +6,9 @@ become "forgotten." Nothing in this file changes today's behavior.
 
 ## Licensed content
 
-The pipeline (`scripts/fetch-candidates.ts`, `scripts/load-candidates.ts`,
-`scripts/promote-candidate.ts`) is public-domain-only, permanently, by
-design — see `rights_status` on `works`/`content_candidates`
+The daily pull (`scripts/add-daily.ts`, `scripts/promote-candidate.ts`,
+`lib/rights.ts`) is public-domain-only, permanently, by design — see
+`rights_status` on `works`/`content_candidates`
 (`db/migrations/0003_curation_and_dedup.sql`). That's a real limit: Bradbury
 names Roald Dahl (d. 1990), Aldous Huxley (d. 1963), and Loren Eiseley
 (d. 1977) as reading-list authors, and none of them are public domain. The
@@ -18,9 +18,8 @@ than pretending the actual named authors are reachable through automation.
 
 `rights_status` already allows a `'licensed'` value, unused today. If a real
 licensing arrangement ever exists for specific non-PD works, that's how it
-would be represented — added by hand, one work at a time, through the same
-`promote-candidate.ts` review step (never auto-promoted, never mixed into
-what `fetch-candidates.ts` discovers on its own).
+would be represented — added by hand with `add-daily --force-pd` after the
+call is made explicitly, never on the strength of the year math alone.
 
 ## Physical / external-reference "companion" mode
 
@@ -46,49 +45,29 @@ Not built. When it is:
 
 ## Diversity balancing (era / difficulty / region)
 
-`era`, `difficulty`, and `region` are stored on every work and now indexed
-(`0003_curation_and_dedup.sql`), and `--era` is required at promotion time —
-but `lib/selection/algorithm.ts` doesn't read any of them yet; the rotation
-is purely "walk the fixed shuffle order," with no anti-clustering.
+`era`, `difficulty`, and `region` are stored on every work and indexed
+(`0003_curation_and_dedup.sql`). The daily pipeline is *told* to favour
+variety across consecutive days (see the prompt in `content-pipeline.yml`
+and the quality bar in `seed/README.md`), but nothing enforces it — a run
+that picks three 19th-century English essays in a row would go through.
 
-Once the pool has grown past its current size, worth adding a light check in
-`rotationOrder`/`selectDailyWorks`: avoid the same `era` landing in a
-category slot on consecutive days, say. Needs real `era` data across the
-catalog first (which promotion now forces going forward) — not worth doing
-against a ~30-works-per-category pool where it wouldn't have much to balance
-against yet.
+Worth adding a hard check to `scripts/add-daily.ts`: before pinning, look at
+the last ~5 days of `daily_picks` for that category and refuse (or warn) on
+the same `era`/`region` landing three days running. Cheap, and it makes the
+"favour variety" instruction real instead of advisory.
 
 ## Guest / celebrity curators
 
-Schema sketch, not built:
+Mostly free now: `daily_picks` already *is* a `(date, category) → work`
+schedule, and a human can fill a future date by hand with `npm run add-daily`
+before the pipeline gets to it (`recordDailyPick`'s upsert means whoever runs
+last wins — so a scheduled guest pick would need the pipeline taught to skip
+a date that's already fully pinned).
 
-```sql
-create table curators (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  bio text,
-  is_active boolean not null default true,
-  created_at timestamptz not null default now()
-);
-
--- add 'guest_curated' to the existing content_origin enum
-
-create table scheduled_overrides (
-  id uuid primary key default gen_random_uuid(),
-  date date not null,
-  category work_category not null,
-  work_id uuid not null references works(id),
-  curator_id uuid references curators(id),
-  created_at timestamptz not null default now(),
-  unique (date, category)
-);
-```
-
-`selectDailyWorks` would gain one pre-check: look up `scheduled_overrides`
-for `(date, category)` before falling back to `rotationOrder`. On any day
-without an override row (i.e. every day, until this ships and someone
-schedules one), the output is byte-identical to today's — a pure additive
-branch, not a change to the deterministic contract everyone else relies on.
+What's actually missing is attribution: a `curators` table (`id`, `name`,
+`bio`, `is_active`) and a nullable `curator_id` on `daily_picks`, plus a line
+in the reading view crediting the pick. Additive, no change to the read path
+for the normal (uncredited) case.
 
 ## Content-sensitivity policy
 
@@ -96,29 +75,20 @@ Explicitly decided, not deferred: no schema field, no promote-time
 checklist, no code. Older public-domain texts that reflect period-typical
 attitudes are not excluded or flagged — it's purely reviewer judgment at
 `npm run review -- promote`, same as everything else that reaches `works`.
-That reviewer is now `content-pipeline.yml`'s scheduled agent rather than a
-person at a terminal (see "Automation" in `README.md`) — same command, same
-absence of a special-cased checklist, still no code carving out an
-exception for this.
+That judgment is now the daily pipeline's scheduled agent
+(`content-pipeline.yml`) picking what to publish rather than a person at a
+terminal — same absence of a special-cased checklist, still no code carving
+out an exception for this.
 
-## Pool-growth bottleneck (a finding, not a plan)
+## Wikisource scanned-page transclusion (a finding, not a plan)
 
-Worth recording: verifying real, cleanly-extractable single-work source URLs
-for `seed/source-pool.json` is the actual bottleneck, not writing more
-pipeline code. Wikisource pages built from scanned-page transclusion
-(`<pages index="..." from=X to=Y />`) don't yield to either the plaintext
-extracts API or the `<poem>`-tag fallback in `fetch-candidates.ts` — several
-strong candidates (Poe's "The Fall of the House of Usher," Chekhov's "The
-Bet," Tennyson's "Ulysses") were ruled out for the *automated* pool on that
-basis alone, not on quality. Two ways around it, neither built:
-
-1. Extend `fetchFromWikisource()` to resolve `<pages index=...>` references
-   by fetching the underlying `Page:` namespace pages and concatenating —
-   real engineering, not just config.
-2. Lean on `scripts/load-candidates.ts` (the agent-assisted path) for these
-   — an agent reading the actual page can extract a transcluded work by
-   hand the way the original 30-work seed catalog was built, sidestepping
-   the automation gap entirely. This is no longer just a one-off manual
-   fallback: `content-pipeline.yml`'s scheduled agent does exactly this
-   whenever `seed/source-pool.json` runs dry, as a routine part of its run
-   rather than something a person has to remember to do.
+Worth recording: Wikisource pages built from scanned-page transclusion
+(`<pages index="..." from=X to=Y />`) don't yield clean text to a plain
+fetch or the MediaWiki plaintext-extracts API — the daily pipeline is told
+to skip them (see the workflow prompt and `seed/README.md`), which quietly
+rules out some strong candidates (Poe's "The Fall of the House of Usher,"
+Chekhov's "The Bet," Tennyson's "Ulysses" all have this shape on Wikisource)
+on mechanics, not quality. The agent doing discovery can still extract a
+transcluded work by reading the underlying `Page:` namespace pages by hand
+when a work is only available that way and clearly worth it — it's a
+should-skip, not a can't.

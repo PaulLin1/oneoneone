@@ -3,7 +3,6 @@
 import { useLocalState } from "@/lib/local-state/useLocalState";
 import { formatDisplayDate } from "@/lib/dateMath";
 import { CategoryColumn } from "@/components/CategoryColumn";
-import { ShareButton } from "@/components/ShareButton";
 
 export default function Home() {
   const { loading, isSlow, error, retry, dayNumber, todaySelection } = useLocalState();
@@ -61,10 +60,6 @@ export default function Home() {
           <CategoryColumn category="essay" work={todaySelection.essay} />
           <CategoryColumn category="story" work={todaySelection.story} />
         </div>
-      </div>
-
-      <div className="flex shrink-0 justify-center pb-2">
-        <ShareButton selection={todaySelection} />
       </div>
     </main>
   );

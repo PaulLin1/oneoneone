@@ -1,37 +1,32 @@
-name: Content pipeline
+name: Daily pipeline
 
-# Fetches and reviews new content candidates unattended — all the judgment
-# calls a human reviewer would normally make, done by a Claude Code agent
-# instead. Author portraits are a separate, less-frequent workflow
-# (author-portraits.yml) — that part used to live here too, but its
-# uncapped retry-per-author loop was the main reason a run could take 30+
-# minutes and burn far more tokens than the fetch+review work needed. See
-# "Automation" in README.md for the full picture.
+# The whole content operation, unattended, once a day. There is no
+# catalogue and no rotation (lib/selection was removed): each run discovers
+# three genuinely new public-domain works fresh from the web — one poem, one
+# essay, one story — writes their descriptions, promotes them live, pins
+# them to today's date in daily_picks (scripts/add-daily.ts). A work is only
+# added once its author's portrait is secured (scripts/ensure-author-portrait.ts):
+# no portrait, different work. The home page and Archive are just reads of
+# daily_picks (lib/dailyPicks.ts).
 #
-# Also dispatchable in `fetch-only` mode by app/api/admin/fetch-candidates
-# — the "Fetch new candidates" button on /account tries the fast, free,
-# non-agent path first (npm run fetch-candidates, sampling seed/source-
-# pool.json directly), and only falls back to triggering this workflow
-# when that pool is empty, since finding genuinely new sources needs real
-# web search and judgment, not just sampling a fixed local list.
+# Also dispatchable by hand (or by app/api/admin/trigger-author-portraits):
+#   - portraits-only — the portrait step only, for backfilling authors an
+#                      earlier run couldn't get a usable image for.
 on:
   schedule:
-    - cron: "0 13 * * 1" # Mondays, 13:00 UTC
+    - cron: "0 13 * * *" # every day, 13:00 UTC
   workflow_dispatch:
     inputs:
       mode:
         description: >-
-          full = fetch, discover, review, and promote/reject (the normal
-          weekly run). fetch-only = fetch + discover, then stop — leaves
-          everything staged for a human to review from /admin/review.
-          Used by the "Fetch new candidates" button on /account when the
-          pool comes up empty on the fast, free, non-agent path.
+          full = discover today's three, promote, portraits (the normal
+          daily run). portraits-only = the portrait step only.
         required: false
         default: full
         type: choice
         options:
           - full
-          - fetch-only
+          - portraits-only
 
 permissions:
   contents: write
@@ -45,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     # Independent of --max-budget-usd below — if the action ever fails to
     # honor that flag, this is the backstop that still kills a runaway run.
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +54,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -66,101 +62,136 @@ jobs:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # --model: this is rule-following work (explicit criteria, no
-          # open-ended design judgment) — Sonnet is plenty, and costs a
-          # fraction of whatever the action's own default is.
-          # --max-budget-usd: a hard ceiling. Every other cap in this prompt
-          # is a *should*; this is the actual backstop if the agent goes off
-          # the rails anyway — it stops mid-run rather than running up a
-          # bill with nothing to show for it.
-          claude_args: '--model claude-sonnet-5 --max-budget-usd 2 --allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
+          # --model: this is rule-following work (explicit criteria in
+          # seed/README.md, no open-ended design judgment) — Sonnet is
+          # plenty and costs a fraction of the action's default.
+          # --max-budget-usd: a hard ceiling. Every other cap in the prompt
+          # is a *should*; this is the real backstop. 8 covers three web
+          # discoveries (each work's full text read once), the portrait
+          # gate, and a couple of work swaps when an author turns out to
+          # have no usable portrait.
+          claude_args: '--model claude-sonnet-5 --max-budget-usd 8 --allowed-tools "Bash,Read,Edit,Write,WebFetch,WebSearch"'
           prompt: |
-            You're running the oneoneone content pipeline unattended —
-            standing in for the human reviewer this project's docs describe.
+            You're running the oneoneone daily pipeline unattended. Each run
+            publishes exactly one day's reading: one poem, one essay, one
+            story, all brand new to the site, plus their author portraits.
+            This is a RECURRING DAILY job — do today's three and stop, don't
+            work ahead.
+
             Mode for this run: ${{ inputs.mode || 'full' }}
-              - full (the normal weekly run): do all 5 steps below,
-                including reviewing and promoting/rejecting.
-              - fetch-only (someone clicked "Fetch new candidates" on
-                /account and the pool was empty): do ONLY steps 1 and 2,
-                then stop. Do not review, promote, or reject anything —
-                leave it all as needs_review for a human to look at from
-                /admin/review. Still do step 4 (verify) and step 5 (commit)
-                if step 2 changed seed/source-pool.json.
-            Either way, this is a recurring job, not a one-shot — leave work
-            for next time rather than exhausting the budget on this run.
-            Author portraits are a separate workflow
-            (author-portraits.yml); don't do that here even if you notice a
-            gap.
+              - full           — steps 1–6.
+              - portraits-only — step 4 only, as `npm run
+                                 ensure-author-portrait -- --all` (the
+                                 backlog of authors with portrait_url null),
+                                 then steps 5–6 if a file changed.
 
-            Read ONLY these before starting, not the rest of README.md: the
-            "Content pipeline" section (grep README.md for "^## Content
-            pipeline", read from there to the next "^## " heading) and
-            seed/README.md in full. They define the sourcing rules, the
-            rights/PD bar, and the quality bar. Follow them exactly; do not
-            relax them because no one's watching. When in doubt about
-            rights or quality, reject/skip rather than force something
-            live.
+            NON-NEGOTIABLE: every author whose work you publish today ends
+            the run with a real portrait in `authors.portrait_url`. The
+            initial-letter mark in components/AuthorMark.tsx is a
+            placeholder for the minutes between promoting a work and
+            publishing its portrait — it is NOT an acceptable end state for
+            a run. If an author has no usable portrait, that is a signal you
+            picked the wrong work: swap it (step 4).
 
-            1. Fetch: run `npm run fetch-candidates -- 3`. (Deliberately
-               small — each one gets its full text read in step 3, and that
-               text stays in this session's context for every step after
-               it. Fewer, more often, costs less per run than a big batch.)
+            Read these before starting, and nothing else in the repo docs:
+              - seed/README.md in full — sourcing rules, the public-domain
+                cutoff (lib/rights.ts: 96 years since publication, or the
+                author dead 70+ years), text-formatting conventions, the
+                quality bar.
+              - ROADMAP.md's "Wikisource scanned-page transclusion" section
+                — why those pages are normally skipped.
+            Follow them exactly. When in doubt about rights or quality, pick
+            something else — never publish a work you can't confirm is
+            public domain.
 
-            2. If that staged nothing new (pool exhausted or everything's
-               already known), grow seed/source-pool.json yourself — but
-               capped: at most 3 WebSearch calls and at most 5 verified
-               URLs added, then move on regardless of how it went. Look for
-               well-known, pre-1930-published poems/essays/short stories on
-               Gutenberg, Wikisource, or Standard Ebooks that aren't already
-               in seed/works.json or seed/source-pool.json. Verify each URL
-               actually resolves to the single work itself (not an index or
-               a scanned-page-transclusion Wikisource page — see
-               ROADMAP.md's "Pool-growth bottleneck" note on why those get
-               skipped) with one WebFetch each, not several. Add verified
-               entries to seed/source-pool.json, or if you already have the
-               full verbatim text in hand from fetching it, stage it
-               directly via a batch JSON file and
-               `npm run load-candidates -- <file>` — then delete that batch
-               file once loaded, same as any other scratch file.
+            TODAY is the workflow run date in UTC (date -u +%F).
 
-            3. Review: `npm run review` lists everything with status
-               needs_review. For each one:
-               - `npm run review -- show <id>` for full detail.
-               - If it came from the mechanical fetch path, it has no
-                 description yet — read the actual text and write one
-                 (1-2 sentences, matching the tone of entries already in
-                 seed/works.json — no clichés, no back-cover copy).
-               - Assign 2-5 lowercase tags and a region if missing.
-               - Judge difficulty (easy/medium/challenging) on vocabulary,
-                 syntax, and density, same as seed/README.md describes.
-               - Compute era from year yourself: ancient <1800,
-                 19th_century 1800-1899, early_20th_century 1900-1929.
-               - Confirm rights_status is genuinely public_domain (the
-                 96-years-since-publication math in lib/rights.ts, not a
-                 guess) before promoting.
-               - Fill gaps with
-                 `npm run review -- edit <id> --description="..." --tags=a,b,c --region="..." --reading-minutes=N`,
-                 then promote with
-                 `npm run review -- promote <id> --era=<era> --difficulty=<difficulty>`.
-               - Reject anything that fails verification, is a near-
-                 duplicate, has garbled/incomplete extracted text, or you
-                 can't actually confirm public-domain status for:
-                 `npm run review -- reject <id> "reason"`.
+            1. CHECK: `npm run review -- list` and a quick
+               `psql "$DATABASE_URL" -c "select category, title from works order by created_at desc limit 30"`
+               so you know what's already been used — never repeat a title
+               or author already in `works`, and never reuse a `source_url`.
 
-            4. Verify before finishing: `npm run lint`, `npx tsc --noEmit`,
-               `npm test`, `npm run build` must all pass clean. Redirect
-               each to a file and only read the tail if it fails (e.g.
-               `npm run build > /tmp/build.log 2>&1 || tail -60
-               /tmp/build.log`) — a clean run's full output has no judgment
-               call in it, just tokens.
+            2. DISCOVER — for each of poem, essay, story, draw up a SHORT
+               LIST of 3-4 well-known, pre-1930-published works on Project
+               Gutenberg, Standard Ebooks, or Wikisource that aren't already
+               used, by different authors. Use WebSearch to find candidates
+               and WebFetch to confirm each URL resolves to the single work
+               itself (not an index, not a collection, not a
+               scan-transclusion page). Prefer variety across runs —
+               different eras, regions, and authors than the last few days.
+               You need a short list because a work whose author has no
+               usable portrait gets dropped in step 3.
 
-            5. Commit whatever *files* changed (seed/source-pool.json is
-               the only one now) with a clear message describing what was
-               added/rejected, and push to main. All the database writes
-               (promote/reject) already happened live when you ran those
-               commands — this commit, if there's anything to commit at
-               all, is only for files.
+            3. PORTRAIT GATE + ADD — work through one category at a time.
+               Take the top work on that category's short list and, BEFORE
+               adding it, secure its author's portrait:
 
-            If a step finds nothing to do (no new candidates), that's a
-            normal, successful run — just say so and stop; don't force work
-            that isn't there.
+                 `npm run ensure-author-portrait -- "<Author Name>"`
+
+               This fetches candidates (Wikipedia + license-filtered
+               Wikimedia Commons), crops each around the detected face,
+               scores them, and publishes the best to R2 + `authors.portrait_url`
+               — or exits non-zero if nothing clears the quality bar.
+               - Exit 0 → eyeball the published result (ensure- already
+                 cleared _staging): `curl -s "$(psql "$DATABASE_URL" -tAc
+                 "select portrait_url from authors where name = '<Author>'")"
+                 -o /tmp/p.png` then Read /tmp/p.png. A real, recognizable
+                 face → keep this work, run add-daily for it (below). A bad
+                 crop despite the passing score → treat it like exit
+                 non-zero.
+               - Exit non-zero (or bad crop) → this work is out. Cross the
+                 author off, take the next work on the short list, and
+                 repeat the gate. If the whole short list is exhausted, go
+                 back to step 2 for that category. Do NOT add a work whose
+                 author has no portrait.
+
+               add-daily for a work that cleared the gate:
+               `npm run add-daily -- --date=<TODAY> --category=<cat>
+                 --title="…" --author="…" --year=<publication year>
+                 --source-name="…" --source-url="…"
+                 --text-file=/tmp/<cat>.txt
+                 --era=<ancient|19th_century|early_20th_century> (from the
+                 year; the script computes it if omitted)
+                 --difficulty=<easy|medium|challenging> (judge from
+                 vocabulary, syntax, density — seed/README.md)
+                 --region="…" --tags=<2-5 lowercase, comma-separated>`
+               (save the cleaned full text, boilerplate stripped per
+               seed/README.md, to /tmp/<cat>.txt first). Omit --description
+               to let it auto-generate, or pass one you've written (1-2
+               sentences, the tone of seed/README.md — no clichés, no
+               back-cover copy). If a work's PD status rests on the author's
+               death rather than publication year, add
+               `--author-death-year=<year>`. The script stages, promotes,
+               and pins to daily_picks in one step; if it errors, fix the
+               input or pick a different work — do NOT hand-edit the DB.
+
+               After all three categories: confirm with
+               `psql "$DATABASE_URL" -c "select dp.category, w.author_name, (a.portrait_url is not null) as has_portrait from daily_picks dp join works w on w.id = dp.work_id join authors a on a.name = w.author_name where dp.pick_date = '<TODAY>'"`
+               — exactly three rows, every has_portrait = t.
+
+            4. PORTRAIT BACKLOG (portraits-only mode, or a spare moment in
+               full mode) — `npm run ensure-author-portrait -- --all`
+               retries every author with portrait_url null. It's cheap
+               (Wikipedia + Commons API calls, no model), so there's no
+               per-run cap; just let it run. Any author it still can't place
+               stays on the initial-letter mark until a future run or a
+               manual `npm run publish-author-portrait` from a hand-picked
+               source.
+
+            5. VERIFY: `npm run lint`, `npx next typegen && npx tsc
+               --noEmit`, `npm test`, `npm run build` must all pass clean.
+               Redirect each to a file, read the tail only on failure
+               (e.g. `npm run build > /tmp/build.log 2>&1 || tail -60
+               /tmp/build.log`).
+
+            6. COMMIT — only if a tracked file actually changed (normally
+               nothing does: works, daily_picks, and portrait_url are all
+               live DB/R2 writes, and public/authors/_source and _staging
+               are gitignored — delete anything left there rather than
+               committing it). If there is something, use a message naming
+               the three works added and any portraits published, and push
+               to main.
+
+            "Published today's three, every author has a portrait" is the
+            normal successful result — report what you did (including any
+            works you swapped out for a missing portrait) and stop.

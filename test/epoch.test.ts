@@ -29,8 +29,8 @@ test("globalDayNumber and dateForDay are inverses across a wide range", () => {
 
 test("dates before the epoch produce day numbers <= 0, not clamped or thrown", () => {
   // The day before launch is Day 0, the day before that is Day -1, etc. —
-  // selectDailyWorks relies on this staying arithmetic (see selection.test.ts's
-  // negative-modulo case), not on this function guarding the range itself.
+  // add-daily and buildArchiveDays reject sub-1 day numbers themselves; this
+  // function just stays arithmetic and doesn't guard the range.
   const dayBefore = dateForDay(0);
   assert.equal(globalDayNumber(dayBefore), 0);
   const twoDaysBefore = dateForDay(-1);

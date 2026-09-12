@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { neon } from "@neondatabase/serverless";
 import { authorSlug } from "@/lib/authorPortraits";
@@ -12,7 +12,11 @@ if (!url) {
 
 const sql = neon(url);
 
-const STAGING_DIR = path.join(process.cwd(), "public", "authors", "_source");
+const SOURCE_DIR = path.join(process.cwd(), "public", "authors", "_source");
+const STAGING_DIR = path.join(process.cwd(), "public", "authors", "_staging");
+
+/** How many candidate images to download per author for the processing step to pick from. */
+const MAX_CANDIDATES = 8;
 
 type WikipediaSummary = {
   extract?: string;
@@ -20,6 +24,15 @@ type WikipediaSummary = {
   originalimage?: { source: string };
   thumbnail?: { source: string };
   content_urls?: { desktop?: { page?: string } };
+};
+
+type Candidate = {
+  url: string;
+  source: "wikipedia" | "commons";
+  width: number;
+  height: number;
+  /** Commons file title, used only for ranking; "" for the Wikipedia lead image. */
+  title: string;
 };
 
 /**
@@ -56,24 +69,121 @@ async function fetchSummaryFor(title: string): Promise<Response> {
  * "Saki (H. H. Munro)" — Wikipedia's actual article title is just "Saki".
  * On a 404, retry once with the parenthetical stripped before giving up.
  */
-async function fetchSummary(name: string): Promise<WikipediaSummary> {
+async function fetchSummary(name: string): Promise<WikipediaSummary | null> {
   let res = await fetchSummaryFor(name);
   if (res.status === 404) {
     const stripped = name.replace(/\s*\([^)]*\)\s*$/, "").trim();
     if (stripped !== name) res = await fetchSummaryFor(stripped);
   }
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Wikipedia summary API HTTP ${res.status}`);
   return res.json();
 }
 
-async function downloadImage(imageUrl: string, slug: string): Promise<string> {
+const PD_LICENSE = /^(pd|cc0)/i;
+const PD_LICENSE_NAME = /public domain|cc0|no known copyright|no restrictions|pd-art|pd-old|pd-us/i;
+const USABLE_MIME = /^image\/(jpeg|png|tiff)$/;
+
+// Title words that mean "not a head-and-shoulders of this person": monuments,
+// memorabilia, buildings, documents, group scenes.
+const NON_PORTRAIT_TITLE =
+  /\b(statue|sculpture|bust|plaque|medal|medallion|coin|banknote|stamp|grave|headstone|tomb|memorial|birthplace|house|cottage|church|building|hall|signature|letter|manuscript|autograph|caricature|cartoon|silhouette|family|children|group)\b/i;
+// Title words that mean "someone already cropped this to the face" — exactly
+// what thresholds cleanest, so these jump the queue.
+const PRECROPPED_TITLE = /\b(cropped|detail|head|face)\b/i;
+
+/**
+ * Wikimedia Commons full-text search for portraits of this author, kept to
+ * files whose *own* license is public domain / CC0 (an author being out of
+ * copyright says nothing about a given photograph of them).
+ *
+ * Only two negative terms: Commons' search degrades badly once you stack
+ * more than a few (`-a -b -c -d -e -f` was returning 2–3 hits total for
+ * even very well-photographed authors), so the rest of the junk is dropped
+ * by NON_PORTRAIT_TITLE afterwards instead. process-author-portraits.ts
+ * scores whatever survives; this just orders the queue so the best bets
+ * download first within MAX_CANDIDATES.
+ */
+async function fetchCommonsCandidates(name: string): Promise<Candidate[]> {
+  const endpoint = new URL("https://commons.wikimedia.org/w/api.php");
+  endpoint.search = new URLSearchParams({
+    action: "query",
+    format: "json",
+    generator: "search",
+    gsrsearch: `${name} portrait -statue -stamp`,
+    gsrnamespace: "6",
+    gsrlimit: "40",
+    prop: "imageinfo",
+    iiprop: "url|size|mime|extmetadata",
+  }).toString();
+
+  const res = await fetch(endpoint, { headers: { "User-Agent": USER_AGENT } });
+  if (!res.ok) throw new Error(`Commons search API HTTP ${res.status}`);
+  const body = (await res.json()) as {
+    query?: { pages?: Record<string, { title?: string; imageinfo?: Array<Record<string, unknown>> }> };
+  };
+
+  const pages = Object.values(body.query?.pages ?? {});
+  const candidates: Candidate[] = [];
+  for (const page of pages) {
+    const info = page.imageinfo?.[0];
+    if (!info) continue;
+
+    const title = String(page.title ?? "").replace(/^File:/, "");
+    if (NON_PORTRAIT_TITLE.test(title)) continue;
+
+    const mime = String(info.mime ?? "");
+    if (!USABLE_MIME.test(mime)) continue;
+
+    const meta = (info.extmetadata ?? {}) as Record<string, { value?: string }>;
+    const license = meta.License?.value ?? "";
+    const licenseName = meta.LicenseShortName?.value ?? "";
+    if (!PD_LICENSE.test(license) && !PD_LICENSE_NAME.test(licenseName)) continue;
+
+    const width = Number(info.width ?? 0);
+    const height = Number(info.height ?? 0);
+    if (width < 240 || height < 240) continue;
+    // Skip panoramas / full-page scans — never a usable head-and-shoulders.
+    if (width / height > 2 || height / width > 2.6) continue;
+
+    const imageUrl = String(info.url ?? "");
+    if (!imageUrl) continue;
+    candidates.push({ url: imageUrl, source: "commons", width, height, title });
+  }
+
+  // Pre-cropped first, then portrait-oriented, then largest — the
+  // processing step still has the final say, this just puts the likeliest
+  // ones at the front of the MAX_CANDIDATES cut.
+  const rank = (c: Candidate) =>
+    (PRECROPPED_TITLE.test(c.title) ? 0 : 2) + (c.height >= c.width ? 0 : 1);
+  candidates.sort((a, b) => {
+    const r = rank(a) - rank(b);
+    if (r !== 0) return r;
+    return b.width * b.height - a.width * a.height;
+  });
+  return candidates;
+}
+
+async function downloadImage(imageUrl: string, slug: string, index: number): Promise<string> {
   const res = await fetch(imageUrl, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Image download HTTP ${res.status}`);
-  const ext = path.extname(new URL(imageUrl).pathname) || ".jpg";
-  const dest = path.join(STAGING_DIR, `${slug}${ext}`);
-  mkdirSync(STAGING_DIR, { recursive: true });
+  let ext = path.extname(new URL(imageUrl).pathname).toLowerCase();
+  if (!/^\.(jpe?g|png|tiff?)$/.test(ext)) ext = ".jpg";
+  const dest = path.join(SOURCE_DIR, `${slug}__${String(index).padStart(2, "0")}${ext}`);
   writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
   return dest;
+}
+
+/** Everything staged for this author from a previous run — start each fetch clean. */
+function clearStaged(slug: string): void {
+  for (const dir of [SOURCE_DIR, STAGING_DIR]) {
+    if (!existsSync(dir)) continue;
+    for (const file of readdirSync(dir)) {
+      if (file === slug || file.startsWith(`${slug}.`) || file.startsWith(`${slug}__`)) {
+        rmSync(path.join(dir, file), { force: true });
+      }
+    }
+  }
 }
 
 /**
@@ -98,74 +208,100 @@ async function upsertAuthorFacts(
 }
 
 async function fetchOne(name: string) {
+  const slug = authorSlug(name);
   try {
     const summary = await fetchSummary(name);
-    const { birthYear, deathYear } = parseLifespan(summary.description ?? "");
-    const imageUrl = summary.originalimage?.source ?? summary.thumbnail?.source ?? null;
-    const slug = authorSlug(name);
+    const { birthYear, deathYear } = parseLifespan(summary?.description ?? "");
 
-    let savedTo: string | null = null;
-    if (imageUrl) {
+    const candidates: Candidate[] = [];
+    const wikipediaImage = summary?.originalimage?.source ?? summary?.thumbnail?.source ?? null;
+    if (wikipediaImage) {
+      candidates.push({ url: wikipediaImage, source: "wikipedia", width: 0, height: 0, title: "" });
+    }
+
+    try {
+      candidates.push(...(await fetchCommonsCandidates(name)));
+    } catch (err) {
+      console.error(`  · Commons search failed for ${name}:`, err instanceof Error ? err.message : err);
+    }
+
+    // De-dupe by URL, keep original order (Wikipedia's own pick first).
+    const seen = new Set<string>();
+    const unique = candidates.filter((c) => !seen.has(c.url) && seen.add(c.url)).slice(0, MAX_CANDIDATES);
+
+    clearStaged(slug);
+    mkdirSync(SOURCE_DIR, { recursive: true });
+
+    const saved: string[] = [];
+    for (const [i, candidate] of unique.entries()) {
       try {
-        savedTo = await downloadImage(imageUrl, slug);
+        saved.push(await downloadImage(candidate.url, slug, i + 1));
       } catch (err) {
-        console.error(`  ✗ image download failed for ${name}:`, err instanceof Error ? err.message : err);
+        console.error(`  · download failed (${candidate.source}) for ${name}:`, err instanceof Error ? err.message : err);
       }
     }
 
     await upsertAuthorFacts(name, {
       birthYear,
       deathYear,
-      portraitSourceUrl: imageUrl,
+      portraitSourceUrl: unique[0]?.url ?? null,
     });
 
-    console.log(`  ✓ ${name}`);
+    console.log(`  ${saved.length > 0 ? "✓" : "✗"} ${name}`);
     console.log(`      lifespan: ${birthYear ?? "?"}–${deathYear ?? "?"}`);
-    console.log(`      portrait: ${savedTo ? `saved to ${path.relative(process.cwd(), savedTo)}` : "(none found)"}`);
-    if (summary.extract) console.log(`      wikipedia extract (for hand-writing bio, not auto-applied):\n        ${summary.extract}`);
+    if (saved.length > 0) {
+      console.log(`      ${saved.length} candidate(s): ${saved.map((p) => path.basename(p)).join(", ")}`);
+    } else {
+      console.log(`      no usable candidate images found (Wikipedia + Commons)`);
+    }
+    if (summary?.extract) {
+      console.log(`      wikipedia extract (for hand-writing bio, not auto-applied):\n        ${summary.extract}`);
+    }
   } catch (err) {
     console.error(`  ✗ ${name}:`, err instanceof Error ? err.message : err);
   }
 }
 
 /**
- * Authors never fetched at all yet — checks portrait_source_url (was a raw
- * image ever pulled?), not portrait_url (was one ever published?), so an
- * author whose photo turned out unusable during review doesn't get
- * re-fetched from Wikipedia every single automated run forever.
+ * The real portrait backlog: authors with no *published* portrait
+ * (portrait_url null), whatever happened on earlier runs. Re-fetching from
+ * Wikipedia + Commons is a couple of cheap API calls with no model in the
+ * loop, so there's no reason to skip an author just because a previous
+ * attempt downloaded something that didn't threshold cleanly — the
+ * per-run author cap in content-pipeline.yml is what bounds the cost.
  */
 async function authorsMissingPortrait(): Promise<string[]> {
   const rows = await sql`
-    select name from authors where portrait_source_url is null order by name
+    select name from authors where portrait_url is null order by name
   `;
   return rows.map((r) => r.name as string);
 }
 
 async function main() {
   const args = process.argv.slice(2);
-  const names = args.includes("--all") ? await authorsMissingPortrait() : args;
+  const names = args.includes("--all") ? await authorsMissingPortrait() : args.filter((a) => !a.startsWith("--"));
 
   if (names.length === 0) {
     console.log("Usage:");
     console.log('  npm run fetch-author-portrait -- "Edgar Allan Poe" "Kate Chopin"');
-    console.log("  npm run fetch-author-portrait -- --all   # every author missing a portrait_source_url");
+    console.log("  npm run fetch-author-portrait -- --all   # every author with no published portrait_url");
     process.exitCode = 1;
     return;
   }
 
-  console.log(`Fetching Wikipedia summary + portrait for ${names.length} author(s)…\n`);
+  console.log(`Fetching Wikipedia + Commons portrait candidates for ${names.length} author(s)…\n`);
   for (const [i, name] of names.entries()) {
     if (i > 0) await new Promise((resolve) => setTimeout(resolve, 300)); // stay polite to Wikimedia's API
     await fetchOne(name);
   }
 
   console.log(
-    `\nDownloaded images are raw, unprocessed Wikipedia source images staged in public/authors/_source/. Next: ` +
-      `\`npm run process-author-portraits\` to crop + threshold them into public/authors/_staging/, glance over ` +
-      `each one, then \`npm run publish-author-portrait -- "Name"\` (or --all) to upload the good ones to R2 and ` +
-      `set authors.portrait_url — see "Author portraits" in README.md. Verify the source image's own license/PD ` +
-      `status before publishing it — Wikipedia/Commons images aren't automatically public domain just because ` +
-      `the author's writing is.`
+    `\nRaw candidate images are staged in public/authors/_source/ as <slug>__NN.<ext>. Next: ` +
+      `\`npm run process-author-portraits\` crops + thresholds each one and writes the best-scoring result to ` +
+      `public/authors/_staging/<slug>.png (all candidates are kept as <slug>__NN.png to compare). Glance over it, ` +
+      `then \`npm run publish-author-portrait -- "Name"\` (add \`--variant=N\` to publish a specific candidate) to ` +
+      `upload to R2 and set authors.portrait_url. Verify the source image's own license is public domain / CC0 ` +
+      `before publishing.`
   );
 }
 

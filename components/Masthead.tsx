@@ -1,27 +1,26 @@
 import Link from "next/link";
 import { auth, signIn } from "@/lib/auth";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
-// Outlined pill — same recipe as linpaul.com's nav (styles/globals.css
-// .site-nav a): paper fill, 1px ink border, ink text, --tile-hover on hover.
+// Plain text — no fill, no border. Matches linpaul.com's nav exactly
+// (styles/globals.css .site-nav a): ink by default, underline on hover.
 // Padding/font-size/gap are linpaul's exact numbers too (--step--1, from
 // design-system/tokens.css) — the whole masthead is meant to look like one
 // component across all three sites, not a per-project reskin.
 const CHIP =
-  "-my-2 rounded-full border border-ink bg-paper px-3 py-[0.2rem] text-[length:var(--step--1)] text-ink transition-colors hover:bg-[var(--tile-hover)]";
+  "-my-2 py-2 px-[0.4rem] text-[length:var(--step--1)] text-ink transition-colors hover:underline";
 
 /**
  * Async server component — reads the session directly via auth() rather
  * than taking it as a prop, since it's the only thing on the page that
- * needs it. Accounts are entirely opt-in (see README's "Accounts"
- * section): a signed-out visitor sees exactly what this header showed
- * before accounts existed, plus one "Sign in" chip.
+ * needs it. Accounts are entirely opt-in: a signed-out visitor sees
+ * exactly what this header showed before accounts existed, plus one
+ * "Sign in" chip.
  */
 export async function Masthead() {
   const session = await auth();
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b-2 border-ink bg-paper px-6 sm:px-10">
+    <header className="flex h-14 shrink-0 items-center justify-between bg-paper px-6 sm:px-10">
       <Link
         href="/"
         className="-my-2 py-2 text-[length:var(--step-1)] leading-[1.15] tracking-[-0.01em]"
@@ -34,11 +33,6 @@ export async function Masthead() {
         <span className="text-iris">one</span>
       </Link>
       <div className="flex items-center gap-[0.35rem]">
-        {/* Relocated here when the footer was removed — still deliberately
-            inconspicuous, an icon among the chips. */}
-        <span className="mr-0.5 flex items-center text-ink-soft">
-          <ThemeToggle />
-        </span>
         <Link href="/archive" className={CHIP}>
           Archive
         </Link>

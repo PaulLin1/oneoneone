@@ -136,7 +136,7 @@ export default async function ReviewCandidatePage({ params }: { params: Promise<
             </label>
           )}
           <ConfirmSubmitButton
-            confirmMessage={`Promote "${candidate.title}" and make it live? This starts showing up in the daily rotation.`}
+            confirmMessage={`Promote "${candidate.title}" into the catalogue? It becomes available as related reading right away; to run it as a day's official pick, use \`npm run add-daily\`.`}
             className="rounded-full border border-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-ink transition-colors hover:bg-ink hover:text-paper"
           >
             Promote

@@ -23,9 +23,6 @@ export default function ReadPage() {
     dayNumber,
     todaySelection,
     getWork,
-    isRandomized,
-    randomizeCategory,
-    resetRandomized,
   } = useLocalState();
 
   const categoryParam = params.category;
@@ -80,15 +77,10 @@ export default function ReadPage() {
       work={work}
       category={category}
       readDate={todayIso()}
-      source={isRandomized(category) ? "random" : "daily"}
+      source="daily"
       backHref="/"
       backLabel={`No. ${dayNumber !== null ? dayNumber : "···"}`}
       progressHrefs={{ poem: "/read/poem", essay: "/read/essay", story: "/read/story" }}
-      shuffle={{
-        isRandomized: isRandomized(category),
-        onShuffle: () => randomizeCategory(category),
-        onReset: () => resetRandomized(category),
-      }}
     />
   );
 }

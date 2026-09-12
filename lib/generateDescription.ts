@@ -1,18 +1,13 @@
 import type { WorkCategory } from "@/lib/types";
 
 /**
- * Best-effort 1-2 sentence description for a freshly-fetched candidate.
- * Previously this only ever got written by a human reviewer or by the
- * GitHub Actions Claude agent's own judgment pass (content-pipeline.yml
- * step 3) — the mechanical fetch path always left description null. This
- * closes that gap for the fast local path (npm run fetch-candidates, the
- * /account button) too, without touching the GH Actions agent's own
- * behavior: if it sees a description already filled in, it just won't
- * need to write one itself.
+ * Best-effort 1-2 sentence catalog description for a work. Used by
+ * scripts/add-daily.ts when the caller doesn't pass --description, so the
+ * daily pipeline doesn't have to write one by hand for every pick.
  *
- * Never blocks staging on failure — a missing/invalid ANTHROPIC_API_KEY or
- * a request error just means the candidate stays exactly like it used to
- * (description: null, edit it by hand in /admin/review).
+ * Returns null (never throws) on a missing/invalid ANTHROPIC_API_KEY or a
+ * request error — add-daily then requires an explicit --description rather
+ * than publishing a work with no description.
  */
 export async function generateDescription(params: {
   title: string;

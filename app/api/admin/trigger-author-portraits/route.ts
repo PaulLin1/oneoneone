@@ -7,8 +7,9 @@ import { dispatchWorkflow } from "@/lib/githubDispatch";
  * to write image files to disk before a human looks at the crop, and
  * Vercel's serverless functions have no writable filesystem for that. The
  * actual pipeline only runs safely in GitHub Actions (a real VM), so this
- * just calls GitHub's API to start that existing workflow, the same as
- * clicking "Run workflow" in the Actions tab by hand.
+ * just calls GitHub's API to start the daily pipeline in portraits-only
+ * mode — the same as picking that mode under "Run workflow" in the Actions
+ * tab by hand.
  */
 export async function POST() {
   const session = await auth();
@@ -16,7 +17,7 @@ export async function POST() {
     return Response.json({ error: "Not authorized." }, { status: 403 });
   }
 
-  const result = await dispatchWorkflow("author-portraits.yml");
+  const result = await dispatchWorkflow("content-pipeline.yml", { mode: "portraits-only" });
   if ("error" in result) return Response.json(result, { status: 502 });
   return Response.json(result);
 }

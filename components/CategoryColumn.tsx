@@ -63,9 +63,6 @@ export function CategoryColumn({
               {work.author}
               {work.year ? ` · ${work.year}` : ""} · ~{work.reading_minutes} min
             </p>
-            <span className="mt-3 block text-xs font-semibold uppercase tracking-[0.2em] text-ink">
-              Read →
-            </span>
           </div>
         </div>
 
@@ -86,9 +83,6 @@ export function CategoryColumn({
           <div className="relative flex flex-1 items-center">
             <p className="text-sm leading-relaxed sm:text-base">{work.description}</p>
           </div>
-          <span className="relative shrink-0 text-xs font-semibold uppercase tracking-[0.2em]">
-            Read →
-          </span>
         </div>
       </div>
     </Link>

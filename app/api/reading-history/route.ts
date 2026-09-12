@@ -48,12 +48,11 @@ export async function POST(request: Request) {
   if (source === "daily") {
     // 'daily' is a singleton per (user, category, day) — see 0009: unlike
     // random/archive/external, there's only ever supposed to be *one*
-    // "today's official pick." selectDailyWorks() is recomputed from the
-    // live catalog on every request, so if the active-works set changes
-    // partway through the day, a later read here can land on a genuinely
-    // different work than an earlier one — replace the old "daily" row
-    // rather than sitting a second one beside it (which is what caused
-    // the duplicate-daily bug 0009 cleaned up).
+    // "today's official pick." That pick is normally stable now (it's a
+    // pinned daily_picks row, not a recomputed rotation), but if a pick is
+    // re-pinned or archived mid-day a later read here can still land on a
+    // different work — replace the old "daily" row rather than sitting a
+    // second one beside it (the duplicate-daily bug 0009 cleaned up).
     await sql`
       insert into reading_history (user_id, category, read_date, work_id, source)
       select ${session.user.id}, w.category, ${readDate}, w.id, 'daily'

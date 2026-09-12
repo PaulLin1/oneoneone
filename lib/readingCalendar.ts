@@ -3,8 +3,8 @@ import type { WorkCategory } from "./types";
 /**
  * How a read happened — shown back on /account as a signifier instead of
  * every read looking like that day's canonical pick:
- *   'daily'    today's official pick, read unshuffled
- *   'random'   a shuffled pick, or a work opened via /work/[id]
+ *   'daily'    today's official pick
+ *   'random'   a work opened via /work/[id] (related reading, not that day's pick)
  *   'archive'  an archived day's official pick, opened after that day —
  *              `sourceDate` carries which day it's actually from
  *   'external' something read outside the site entirely
@@ -28,7 +28,7 @@ export type CalendarDay = {
   /** Past `today` — padding to complete the last week, never a real slot. */
   future: boolean;
   /** Zero or more reads per category — the same slot can hold the daily
-   *  pick and a shuffle (or several) side by side, not just one. */
+   *  pick and one or more related reads side by side, not just one. */
   entries: Record<WorkCategory, ReadingHistoryEntry[]>;
 };
 
