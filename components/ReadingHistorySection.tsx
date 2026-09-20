@@ -18,7 +18,6 @@ export function ReadingHistorySection({
   weeks,
   initialHistory,
   adminContent,
-  recommendedContent,
 }: {
   today: string;
   weeks: number;
@@ -28,8 +27,6 @@ export function ReadingHistorySection({
    *  slot rather than this component knowing anything about candidates
    *  or the catalog. */
   adminContent?: ReactNode;
-  /** RecommendedWorks, rendered below Reading history — same plain-slot reasoning as adminContent. */
-  recommendedContent?: ReactNode;
 }) {
   const rows = initialHistory;
 
@@ -84,8 +81,6 @@ export function ReadingHistorySection({
         </div>
         <ReadingCalendar today={today} weeks={weeks} rows={rows} />
       </section>
-
-      {recommendedContent}
     </div>
   );
 }

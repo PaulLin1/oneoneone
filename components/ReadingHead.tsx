@@ -26,7 +26,14 @@ export function ReadingHead({
 
   return (
     <div className="flex shrink-0 items-center justify-between gap-4 border-b border-ink/10 py-4">
-      <Link href={backHref} className="text-sm text-ink-soft transition-colors hover:text-ink">
+      {/* -my-3.5/py-3.5: same invisible tap-target growth as Masthead's CHIP
+          — the negative margin cancels the added padding, so this still
+          sits exactly where a plain text-sm link would, just with a real
+          ~44px hit area instead of one sized to the text's line-height. */}
+      <Link
+        href={backHref}
+        className="-my-3.5 py-3.5 text-sm text-ink-soft transition-colors hover:text-ink"
+      >
         ← {backLabel}
       </Link>
       <div className="flex items-center gap-3 text-xs text-ink-soft">

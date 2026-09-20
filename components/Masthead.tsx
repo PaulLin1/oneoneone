@@ -3,11 +3,15 @@ import { auth, signIn } from "@/lib/auth";
 
 // Plain text — no fill, no border. Matches linpaul.com's nav exactly
 // (styles/globals.css .site-nav a): ink by default, underline on hover.
-// Padding/font-size/gap are linpaul's exact numbers too (--step--1, from
+// Font-size/gap are linpaul's exact numbers too (--step--1, from
 // ./tokens.css) — the whole masthead is meant to look like one component
-// across all three sites, not a per-project reskin.
+// across all three sites, not a per-project reskin. Vertical padding is
+// NOT one of the numbers being matched: -my-3.5/py-3.5 (rather than
+// linpaul's -my-2/py-2) grows the actual tap target to ~44px without
+// moving anything visually — the negative margin absorbs the added
+// padding, so the rendered row height and spacing stay identical.
 const CHIP =
-  "-my-2 py-2 px-[0.4rem] text-[length:var(--step--1)] text-ink transition-colors hover:underline";
+  "-my-3.5 py-3.5 px-[0.4rem] text-[length:var(--step--1)] text-ink transition-colors hover:underline";
 
 /**
  * Async server component — reads the session directly via auth() rather
