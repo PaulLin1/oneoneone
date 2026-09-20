@@ -51,9 +51,17 @@ export async function ReadingFlow({
       <div className="flex-1 overflow-y-auto py-10">
         <ReadingView work={work} readDate={readDate} source={source} sourceDate={sourceDate} />
         <SimilarWorks works={similar} />
+
+        {/* Mobile only: the day strip sits at the end of the normal scroll,
+            not pinned to the bottom of the viewport — on a small screen the
+            reading itself should have the room, not a persistent nav bar.
+            Desktop/tablet keep it as an always-visible footer, below. */}
+        <div className="mx-auto mt-16 max-w-[46rem] border-t border-ink/10 pt-10 sm:hidden">
+          <DayStrip current={category} hrefs={progressHrefs} />
+        </div>
       </div>
 
-      <div className="shrink-0 border-t border-ink/10 py-6">
+      <div className="hidden shrink-0 border-t border-ink/10 py-6 sm:block">
         <DayStrip current={category} hrefs={progressHrefs} />
       </div>
     </main>
