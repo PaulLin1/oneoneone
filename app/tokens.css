@@ -1,14 +1,10 @@
 /* =============================================================================
-   DESIGN TOKENS — SINGLE SOURCE OF TRUTH
+   DESIGN TOKENS
 
-   Canonical file: design-system/tokens.css
-   The copies inside each project (linpaul.com/styles/, oneoneone/app/,
-   social-media-sandbox/app/) are GENERATED. Do not edit them.
-
-   To change the system: edit THIS file, then run design-system/sync.sh,
-   then commit each project repo separately.
-
-   See design-system/DESIGN.md for what the tokens mean and how they're used.
+   oneoneone's own copy of its design tokens: color, type scale, radius,
+   focus ring. Previously synced from a shared design-system repo across
+   linpaul.com/oneoneone/social-media-sandbox; that repo is gone, so this
+   file is now local and can be edited directly.
 ============================================================================= */
 
 :root {

@@ -39,6 +39,7 @@ export default async function ArchiveReadPage({
       readDate={todayIso()}
       source="archive"
       sourceDate={date}
+      dayNumber={day}
       backHref="/archive"
       backLabel="Archive"
       progressHrefs={{

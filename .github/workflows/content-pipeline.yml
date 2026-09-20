@@ -173,8 +173,12 @@ jobs:
                input or pick a different work — do NOT hand-edit the DB.
 
                After all three categories: confirm with
-               `psql "$DATABASE_URL" -c "select dp.category, w.author_name, (a.portrait_url is not null) as has_portrait from daily_picks dp join works w on w.id = dp.work_id join authors a on a.name = w.author_name where dp.pick_date = '<TODAY>'"`
-               — exactly three rows, every has_portrait = t.
+               `psql "$DATABASE_URL" -c "select dp.category, a.name as author, (a.portrait_url is not null) as has_portrait from daily_picks dp join works w on w.id = dp.work_id join authors a on a.id = w.author_id where dp.pick_date = '<TODAY>'"`
+               — exactly three rows, every has_portrait = t. (A separate,
+               independent check runs after this action as a backstop — see
+               the workflow's own "Verify" step below; it doesn't replace
+               this one, since this one is what lets you catch and fix a
+               problem before the run ends.)
 
             4. PORTRAIT BACKLOG (portraits-only mode, or a spare moment in
                full mode) — `npm run ensure-author-portrait -- --all`
@@ -202,3 +206,27 @@ jobs:
             "Published today's three, every author has a portrait" is the
             normal successful result — report what you did (including any
             works you swapped out for a missing portrait) and stop.
+
+      # Independent of the agent's own step-3 self-check above: this runs no
+      # matter what the agent's final report claimed, with its own correct
+      # query, so a subtly-wrong self-report can't pass silently. Only for a
+      # full run — portraits-only doesn't touch today's daily_picks at all,
+      # so there's nothing of this run's for it to verify.
+      - name: Verify today's three are fully published
+        if: ${{ (inputs.mode || 'full') == 'full' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          today=$(date -u +%F)
+          rows=$(psql "$DATABASE_URL" -tAc "select count(*) from daily_picks where pick_date = '$today'")
+          with_portrait=$(psql "$DATABASE_URL" -tAc "
+            select count(*) from daily_picks dp
+            join works w on w.id = dp.work_id
+            join authors a on a.id = w.author_id
+            where dp.pick_date = '$today' and a.portrait_url is not null
+          ")
+          echo "daily_picks for $today: $rows row(s), $with_portrait with a published portrait"
+          if [ "$rows" != "3" ] || [ "$with_portrait" != "3" ]; then
+            echo "::error::Today ($today) is not fully published — expected 3 daily_picks rows with a portrait, got $rows row(s) / $with_portrait with a portrait."
+            exit 1
+          fi

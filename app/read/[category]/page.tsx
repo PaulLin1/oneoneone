@@ -1,10 +1,7 @@
-"use client";
-
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { useLocalState } from "@/lib/local-state/useLocalState";
-import { ReadingFlow } from "@/components/ReadingFlow";
+import { notFound } from "next/navigation";
+import { getDailySelection } from "@/lib/dailyPicks";
 import { todayIso } from "@/lib/dateMath";
+import { ReadingFlow } from "@/components/ReadingFlow";
 import type { WorkCategory } from "@/lib/types";
 
 const ORDER: WorkCategory[] = ["poem", "essay", "story"];
@@ -13,64 +10,27 @@ function isWorkCategory(value: string): value is WorkCategory {
   return (ORDER as string[]).includes(value);
 }
 
-export default function ReadPage() {
-  const params = useParams<{ category: string }>();
-  const {
-    loading,
-    isSlow,
-    error,
-    retry,
-    dayNumber,
-    todaySelection,
-    getWork,
-  } = useLocalState();
+export default async function ReadPage({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}) {
+  const { category: categoryParam } = await params;
+  if (!isWorkCategory(categoryParam)) notFound();
 
-  const categoryParam = params.category;
-
-  if (loading && !todaySelection) {
+  const selection = await getDailySelection(todayIso());
+  if (!selection) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 sm:px-10">
-        <div className="flex gap-2" aria-hidden="true">
-          <span className="h-3 w-3 animate-pulse bg-cyan [animation-delay:0ms]" />
-          <span className="h-3 w-3 animate-pulse bg-red [animation-delay:150ms]" />
-          <span className="h-3 w-3 animate-pulse bg-iris [animation-delay:300ms]" />
-        </div>
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
         <p className="text-sm text-ink-soft">
-          {isSlow ? "Still loading — the database is waking up, hang tight…" : "Loading…"}
+          Today&apos;s reading is still being put together — check back shortly.
         </p>
       </main>
     );
   }
 
-  if (error && !todaySelection) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
-        <p className="text-sm text-ink-soft">Couldn&apos;t load today&apos;s readings: {error}</p>
-        <button
-          type="button"
-          onClick={retry}
-          className="text-sm text-ink underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink-soft"
-        >
-          Try again
-        </button>
-      </main>
-    );
-  }
-
-  if (!todaySelection || !isWorkCategory(categoryParam)) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center sm:px-10">
-        <p className="text-sm text-ink-soft">No reading found for today.</p>
-        <Link href="/" className="text-sm text-ink underline decoration-ink/20 underline-offset-4">
-          Back to today
-        </Link>
-      </main>
-    );
-  }
-
   const category = categoryParam;
-  const work = getWork(category);
-  if (!work) return null;
+  const work = selection[category];
 
   return (
     <ReadingFlow
@@ -78,8 +38,9 @@ export default function ReadPage() {
       category={category}
       readDate={todayIso()}
       source="daily"
+      dayNumber={selection.day}
       backHref="/"
-      backLabel={`No. ${dayNumber !== null ? dayNumber : "···"}`}
+      backLabel="Today"
       progressHrefs={{ poem: "/read/poem", essay: "/read/essay", story: "/read/story" }}
     />
   );

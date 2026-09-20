@@ -4,8 +4,8 @@ import { auth, signIn } from "@/lib/auth";
 // Plain text — no fill, no border. Matches linpaul.com's nav exactly
 // (styles/globals.css .site-nav a): ink by default, underline on hover.
 // Padding/font-size/gap are linpaul's exact numbers too (--step--1, from
-// design-system/tokens.css) — the whole masthead is meant to look like one
-// component across all three sites, not a per-project reskin.
+// ./tokens.css) — the whole masthead is meant to look like one component
+// across all three sites, not a per-project reskin.
 const CHIP =
   "-my-2 py-2 px-[0.4rem] text-[length:var(--step--1)] text-ink transition-colors hover:underline";
 
@@ -23,7 +23,7 @@ export async function Masthead() {
     <header className="flex h-14 shrink-0 items-center justify-between bg-paper px-6 sm:px-10">
       <Link
         href="/"
-        className="-my-2 py-2 text-[length:var(--step-1)] leading-[1.15] tracking-[-0.01em]"
+        className="-my-2 py-2 text-[length:var(--step-2)] leading-[1.15] tracking-[-0.01em]"
       >
         {/* One accent per "one" — poem, essay, story, in that order, matching
             the app icon and every category-color mapping in the app. The only

@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { withTransaction } from "@/lib/dbTransaction";
 
 /**
  * The actual review/promote/reject logic, shared by scripts/promote-
@@ -125,53 +126,70 @@ export async function promoteCandidate(
   }
 
   const difficulty = options.difficulty ?? "medium";
-  const sql = getDb();
 
-  const authorRows = (await sql`
-    insert into authors (name)
-    values (${candidate.author_name})
-    on conflict (name) do update set name = excluded.name
-    returning id
-  `) as unknown as { id: string }[];
-  const authorId = authorRows[0].id;
+  // authors -> works -> tags -> work_tags -> content_candidates is one
+  // logical write (a crash partway through used to leave a work with
+  // missing tags, or an approved work whose candidate never got marked
+  // promoted) — a real transaction now, not four-plus independent
+  // statements. See lib/dbTransaction.ts.
+  const workId = await withTransaction(async (client) => {
+    const authorResult = await client.query<{ id: string }>(
+      `insert into authors (name) values ($1)
+       on conflict (name) do update set name = excluded.name
+       returning id`,
+      [candidate.author_name]
+    );
+    const authorId = authorResult.rows[0].id;
 
-  const workRows = (await sql`
-    insert into works (
-      title, author_id, year, category, text_content, description,
-      source_name, source_url, rights_status, difficulty, reading_minutes,
-      era, region, status, origin
-    ) values (
-      ${candidate.title}, ${authorId}, ${candidate.year},
-      ${candidate.category}, ${candidate.text_content},
-      ${candidate.description}, ${candidate.source_name},
-      ${candidate.source_url}, ${rightsStatus}, ${difficulty},
-      ${candidate.reading_minutes}, ${options.era ?? null}, ${candidate.region},
-      'approved', ${candidate.origin}
-    )
-    on conflict (title, author_id) do update set status = 'approved', updated_at = now()
-    returning id
-  `) as unknown as { id: string }[];
-  const workId = workRows[0].id;
+    const workResult = await client.query<{ id: string }>(
+      `insert into works (
+         title, author_id, year, category, text_content, description,
+         source_name, source_url, rights_status, difficulty, reading_minutes,
+         era, region, status, origin
+       ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'approved', $14)
+       on conflict (title, author_id) do update set status = 'approved', updated_at = now()
+       returning id`,
+      [
+        candidate.title,
+        authorId,
+        candidate.year,
+        candidate.category,
+        candidate.text_content,
+        candidate.description,
+        candidate.source_name,
+        candidate.source_url,
+        rightsStatus,
+        difficulty,
+        candidate.reading_minutes,
+        options.era ?? null,
+        candidate.region,
+        candidate.origin,
+      ]
+    );
+    const newWorkId = workResult.rows[0].id;
 
-  for (const tagSlug of candidate.tags ?? []) {
-    const tagRows = (await sql`
-      insert into tags (slug)
-      values (${tagSlug})
-      on conflict (slug) do update set slug = excluded.slug
-      returning id
-    `) as unknown as { id: string }[];
-    await sql`
-      insert into work_tags (work_id, tag_id)
-      values (${workId}, ${tagRows[0].id})
-      on conflict do nothing
-    `;
-  }
+    for (const tagSlug of candidate.tags ?? []) {
+      const tagResult = await client.query<{ id: string }>(
+        `insert into tags (slug) values ($1)
+         on conflict (slug) do update set slug = excluded.slug
+         returning id`,
+        [tagSlug]
+      );
+      await client.query(
+        `insert into work_tags (work_id, tag_id) values ($1, $2) on conflict do nothing`,
+        [newWorkId, tagResult.rows[0].id]
+      );
+    }
 
-  await sql`
-    update content_candidates
-    set status = 'approved', promoted_work_id = ${workId}, reviewed_at = now()
-    where id = ${id}
-  `;
+    await client.query(
+      `update content_candidates
+       set status = 'approved', promoted_work_id = $1, reviewed_at = now()
+       where id = $2`,
+      [newWorkId, id]
+    );
+
+    return newWorkId;
+  });
 
   return { ok: true, workId };
 }

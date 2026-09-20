@@ -3,12 +3,13 @@
 @plugin "@tailwindcss/typography";
 
 /*
-  Color tokens live in ./tokens.css (imported above) — the shared source of
-  truth across linpaul.com, oneoneone and social-media-sandbox. The system is
-  black on white; the accents (navy/red/cyan/iris/yellow) are fixed identity
-  and never touch the chrome. oneoneone is light-only, same as the other two
-  — tokens.css still carries a `.dark` block (it's generated), but nothing
-  ever puts that class on <html>, so it's inert.
+  Color tokens live in ./tokens.css (imported above). Kept in the same shape
+  as linpaul.com/social-media-sandbox's own tokens.css, which used to be
+  synced from a shared design-system repo. The system is black on white; the
+  accents (navy/red/cyan/iris/yellow) are fixed identity and never touch the
+  chrome. oneoneone is light-only, same as the other two — tokens.css still
+  carries a `.dark` block, but nothing ever puts that class on <html>, so
+  it's inert.
 */
 
 @theme inline {
@@ -30,7 +31,7 @@
   --font-serif: var(--font-literary-serif);
 }
 
-/* The type law (see design-system/DESIGN.md): NO BOLD, NO ALL-CAPS. Every
+/* The type law: NO BOLD, NO ALL-CAPS. Every
    font-weight utility (font-medium, font-semibold, font-bold, …) collapses to
    the one body weight; `uppercase` becomes a no-op; the letterspacing that
    went with the retired all-caps label look is zeroed. Unlayered, so these
@@ -146,20 +147,4 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--scrollbar-thumb-hover);
-}
-
-/* Auto-scrolling title (components/ScrollingTitle.tsx) — two copies of the
-   text run side by side and the track slides left by exactly one copy's
-   width (50%), so it loops seamlessly with no visible jump/reset. */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.marquee-track {
-  animation: marquee linear infinite;
 }

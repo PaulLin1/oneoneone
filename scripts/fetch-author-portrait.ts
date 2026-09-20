@@ -57,8 +57,28 @@ function parseLifespan(description: string): { birthYear: number | null; deathYe
 // info is what keeps this script off that bucket.
 const USER_AGENT = "oneoneone-author-portrait-fetch/1.0 (https://github.com/PaulLin1/oneoneone)";
 
+/**
+ * Retries once, after a short delay, on a transient failure — a network
+ * error, or an HTTP 5xx from Wikipedia/Commons — never on a 4xx, which is a
+ * real "not found" the caller needs to see immediately, not a blip. On the
+ * final attempt, whatever response (or error) came back is what the caller
+ * sees, same as a single unretried fetch would give them.
+ */
+async function fetchWithRetry(url: string | URL, init?: RequestInit, attempts = 2): Promise<Response> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const res = await fetch(url, init);
+      if (res.status < 500 || attempt === attempts) return res;
+    } catch (err) {
+      if (attempt === attempts) throw err;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+  }
+  throw new Error("fetchWithRetry: exhausted attempts");
+}
+
 async function fetchSummaryFor(title: string): Promise<Response> {
-  return fetch(
+  return fetchWithRetry(
     `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, "_"))}`,
     { headers: { "User-Agent": USER_AGENT } }
   );
@@ -117,7 +137,7 @@ async function fetchCommonsCandidates(name: string): Promise<Candidate[]> {
     iiprop: "url|size|mime|extmetadata",
   }).toString();
 
-  const res = await fetch(endpoint, { headers: { "User-Agent": USER_AGENT } });
+  const res = await fetchWithRetry(endpoint, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Commons search API HTTP ${res.status}`);
   const body = (await res.json()) as {
     query?: { pages?: Record<string, { title?: string; imageinfo?: Array<Record<string, unknown>> }> };
@@ -165,7 +185,7 @@ async function fetchCommonsCandidates(name: string): Promise<Candidate[]> {
 }
 
 async function downloadImage(imageUrl: string, slug: string, index: number): Promise<string> {
-  const res = await fetch(imageUrl, { headers: { "User-Agent": USER_AGENT } });
+  const res = await fetchWithRetry(imageUrl, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Image download HTTP ${res.status}`);
   let ext = path.extname(new URL(imageUrl).pathname).toLowerCase();
   if (!/^\.(jpe?g|png|tiff?)$/.test(ext)) ext = ".jpg";

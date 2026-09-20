@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { ReadingView } from "@/components/ReadingView";
+import { SimilarWorks } from "@/components/SimilarWorks";
+import { getSimilarWorks } from "@/lib/recommendations";
 import { globalDayNumber } from "@/lib/epoch";
 import { todayIso } from "@/lib/dateMath";
 import type { Work } from "@/lib/types";
@@ -31,6 +33,7 @@ export default async function WorkPage({
 
   const backHref = isArchiveDay ? `/archive/${fromDay}` : "/";
   const backLabel = isArchiveDay ? fromDay : currentDay;
+  const similar = await getSimilarWorks(work.id);
 
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 sm:px-10">
@@ -42,9 +45,10 @@ export default async function WorkPage({
 
       <div className="flex-1 overflow-y-auto py-10">
         <ReadingView work={work} readDate={todayIso()} source="random" />
-        <p className="mt-10 text-center text-xs text-ink-soft">
+        <p className="mx-auto mt-10 max-w-[46rem] text-center text-xs text-ink-soft">
           Related reading — not one of that day&apos;s three.
         </p>
+        <SimilarWorks works={similar} />
       </div>
     </main>
   );

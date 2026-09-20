@@ -1,22 +1,24 @@
-import Link from "next/link";
+import { ReadingHead } from "@/components/ReadingHead";
 import { ReadingView } from "@/components/ReadingView";
-import { ReadingProgress } from "@/components/ReadingProgress";
+import { DayStrip } from "@/components/DayStrip";
+import { SimilarWorks } from "@/components/SimilarWorks";
+import { getSimilarWorks } from "@/lib/recommendations";
 import type { Work, WorkCategory } from "@/lib/types";
 
 /**
- * The shared stepper chrome (back link, progress boxes, reading view) for
+ * The shared reading chrome (running head, reading view, day strip) for
  * reading through a day's three works — used by both today's flow and
  * every archive day's flow, so format changes only need to happen once
- * here. Navigating between the three happens via the progress boxes
- * themselves — no separate Next/Done button, so the reading area gets the
- * space instead.
+ * here. Navigating between the three happens via the day strip itself —
+ * no separate Next/Done button, so the reading area gets the space instead.
  */
-export function ReadingFlow({
+export async function ReadingFlow({
   work,
   category,
   readDate,
   source,
   sourceDate,
+  dayNumber,
   backHref,
   backLabel,
   progressHrefs,
@@ -28,23 +30,31 @@ export function ReadingFlow({
   /** How this read happened — see ReadingView. */
   source: "daily" | "random" | "archive";
   sourceDate?: string;
+  /** The edition number shown in the running head — today's, or the archived day's. */
+  dayNumber: number;
   backHref: string;
   backLabel: string;
   progressHrefs: Record<WorkCategory, string>;
 }) {
+  const similar = await getSimilarWorks(work.id);
+
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 sm:px-10">
-      <div className="flex shrink-0 items-center justify-between gap-4 py-6">
-        <Link href={backHref} className="text-base text-ink-soft transition-colors hover:text-ink">
-          ← {backLabel}
-        </Link>
-        <div className="flex items-center gap-4">
-          <ReadingProgress current={category} hrefs={progressHrefs} />
-        </div>
-      </div>
+      <ReadingHead
+        backHref={backHref}
+        backLabel={backLabel}
+        dayNumber={dayNumber}
+        category={category}
+        readingMinutes={work.reading_minutes}
+      />
 
       <div className="flex-1 overflow-y-auto py-10">
         <ReadingView work={work} readDate={readDate} source={source} sourceDate={sourceDate} />
+        <SimilarWorks works={similar} />
+      </div>
+
+      <div className="shrink-0 border-t border-ink/10 py-6">
+        <DayStrip current={category} hrefs={progressHrefs} />
       </div>
     </main>
   );

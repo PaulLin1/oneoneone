@@ -41,6 +41,23 @@ function run(script: string, args: string[]): { ok: boolean; output: string } {
   }
 }
 
+type StepResult = { ok: boolean; output: string };
+
+/**
+ * Exit code first, the substring only as a secondary diagnostic — a passing
+ * exit code with no "candidate(s):"/"→ http" line printed would otherwise
+ * look identical to a real success. Pulled out as their own functions (and
+ * exported) so the exit-code-first behavior itself is unit-testable without
+ * shelling out to the real scripts — see test/ensure-author-portrait.test.ts.
+ */
+export function fetchSucceeded(result: StepResult): boolean {
+  return result.ok && result.output.includes("candidate(s):");
+}
+
+export function publishSucceeded(result: StepResult): boolean {
+  return result.ok && result.output.includes("→ http");
+}
+
 type BestResult = { variant: string | null; score: number; faceFound: boolean; passes: boolean };
 
 function readResult(slug: string): BestResult | null {
@@ -59,13 +76,17 @@ async function ensureOne(name: string, minScore: number): Promise<boolean> {
 
   const fetched = run("fetch-author-portrait", [name]);
   process.stdout.write(fetched.output);
-  if (!fetched.output.includes(`candidate(s):`)) {
+  if (!fetchSucceeded(fetched)) {
     console.error(`✗ ${name}: no candidate images from Wikipedia or Commons.`);
     return false;
   }
 
   const processed = run("process-author-portraits", [`--min-score=${minScore}`]);
   process.stdout.write(processed.output);
+  if (!processed.ok) {
+    console.error(`✗ ${name}: portrait processing failed to run.`);
+    return false;
+  }
 
   const result = readResult(slug);
   if (!result) {
@@ -84,7 +105,7 @@ async function ensureOne(name: string, minScore: number): Promise<boolean> {
   const variantArg = result.variant ? [`--variant=${Number(result.variant)}`] : [];
   const published = run("publish-author-portrait", [name, ...variantArg]);
   process.stdout.write(published.output);
-  if (!published.ok || !published.output.includes("→ http")) {
+  if (!publishSucceeded(published)) {
     console.error(`✗ ${name}: publish step failed.`);
     return false;
   }
@@ -138,4 +159,8 @@ async function main() {
   }
 }
 
-main();
+// Guarded so test/ensure-author-portrait.test.ts can import fetchSucceeded/
+// publishSucceeded above without also kicking off a real run.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
