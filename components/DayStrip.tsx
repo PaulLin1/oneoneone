@@ -8,17 +8,12 @@ const CATEGORY_LABEL: Record<WorkCategory, string> = {
   essay: "Essay",
   story: "Story",
 };
-const CATEGORY_NUMBER: Record<WorkCategory, string> = {
-  poem: "01",
-  essay: "02",
-  story: "03",
-};
 
 /**
- * The three square tiles a reader moves between the day's poem/essay/story
- * with — the current one filled with its category accent, the other two
- * outlined. Same square motif as FrontPageTile's numbered marks, doubling
- * as a plain in-page nav rather than a progress indicator.
+ * The three color-coded squares a reader moves between the day's
+ * poem/essay/story with — the current one filled solid with its category
+ * color, the other two outlined in their own color rather than a neutral
+ * border, so color alone signifies which is which before you land on one.
  */
 export function DayStrip({
   current,
@@ -28,7 +23,7 @@ export function DayStrip({
   hrefs: Record<WorkCategory, string>;
 }) {
   return (
-    <nav aria-label="Today's three" className="flex justify-center gap-3 sm:gap-4">
+    <nav aria-label="Today's three" className="flex items-center gap-1.5">
       {ORDER.map((category) => {
         const isCurrent = category === current;
         const accent = CATEGORY_ACCENT[category];
@@ -37,13 +32,11 @@ export function DayStrip({
             key={category}
             href={hrefs[category]}
             aria-current={isCurrent ? "step" : undefined}
-            className={`flex h-20 w-20 flex-col justify-between border border-ink p-2.5 transition-opacity hover:opacity-80 sm:h-24 sm:w-24 sm:p-3 ${
-              isCurrent ? `${accent.bg} ${accent.text}` : "text-ink-soft"
+            aria-label={CATEGORY_LABEL[category]}
+            className={`h-3 w-3 border-2 transition-opacity hover:opacity-70 ${accent.border} ${
+              isCurrent ? accent.bg : "bg-transparent"
             }`}
-          >
-            <span className="text-sm">{CATEGORY_NUMBER[category]}</span>
-            <span className="text-xs">{CATEGORY_LABEL[category]}</span>
-          </Link>
+          />
         );
       })}
     </nav>

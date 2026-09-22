@@ -1,29 +1,24 @@
 import Link from "next/link";
-import { CATEGORY_ACCENT } from "@/lib/categoryColor";
+import { DayStrip } from "@/components/DayStrip";
 import type { WorkCategory } from "@/lib/types";
 
-const CATEGORY_LABEL: Record<WorkCategory, string> = {
-  poem: "Poem",
-  essay: "Essay",
-  story: "Short Story",
-};
-
-/** The slim running head above a reading page: back link, edition number, category, read time. */
+/**
+ * The slim running head above a reading page: back link on the left, the
+ * day strip (nav between the day's three) on the right. Everything else
+ * about the current work — edition number, category, read time — lives in
+ * ReadingView's sidebar instead, alongside the rest of the work's info.
+ */
 export function ReadingHead({
   backHref,
   backLabel,
-  dayNumber,
   category,
-  readingMinutes,
+  progressHrefs,
 }: {
   backHref: string;
   backLabel: string;
-  dayNumber: number;
   category: WorkCategory;
-  readingMinutes: number;
+  progressHrefs: Record<WorkCategory, string>;
 }) {
-  const accent = CATEGORY_ACCENT[category];
-
   return (
     <div className="flex shrink-0 items-center justify-between gap-4 border-b border-ink/10 py-4">
       {/* -my-3.5/py-3.5: same invisible tap-target growth as Masthead's CHIP
@@ -36,16 +31,7 @@ export function ReadingHead({
       >
         ← {backLabel}
       </Link>
-      <div className="flex items-center gap-3 text-xs text-ink-soft">
-        <span>No. {dayNumber}</span>
-        <span aria-hidden="true">·</span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className={`inline-block h-2 w-2 ${accent.bg}`} aria-hidden="true" />
-          {CATEGORY_LABEL[category]}
-        </span>
-        <span aria-hidden="true">·</span>
-        <span>~{readingMinutes} min</span>
-      </div>
+      <DayStrip current={category} hrefs={progressHrefs} />
     </div>
   );
 }

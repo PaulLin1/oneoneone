@@ -2,8 +2,8 @@ import type { WorkCategory } from "./types";
 
 // Three of the five shared accents (see ./tokens.css), one per
 // category, in slot order. The wordmark in Masthead.tsx uses the same three.
-export const CATEGORY_ACCENT: Record<WorkCategory, { bg: string; text: string }> = {
-  poem: { bg: "bg-cyan", text: "text-white" },
-  essay: { bg: "bg-red", text: "text-white" },
-  story: { bg: "bg-iris", text: "text-white" },
+export const CATEGORY_ACCENT: Record<WorkCategory, { bg: string; text: string; border: string }> = {
+  poem: { bg: "bg-cyan", text: "text-white", border: "border-cyan" },
+  essay: { bg: "bg-red", text: "text-white", border: "border-red" },
+  story: { bg: "bg-iris", text: "text-white", border: "border-iris" },
 };
