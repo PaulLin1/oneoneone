@@ -1,4 +1,11 @@
-import { Pool, type PoolClient } from "@neondatabase/serverless";
+import { Pool, neonConfig, type PoolClient } from "@neondatabase/serverless";
+import ws from "ws";
+
+// Node has no global WebSocket (unlike edge runtimes, where @neondatabase/
+// serverless's Pool can use one natively) — without this, Pool's WebSocket
+// handshake silently falls through to a fetch-based upgrade attempt that
+// only works on edge/Workers runtimes, and fails here with "fetch failed".
+neonConfig.webSocketConstructor = ws;
 
 // Separate connection from lib/db.ts's neon() HTTP client and lib/auth-db.ts's
 // pool, for the same reason lib/auth-db.ts's is separate from lib/db.ts's:
