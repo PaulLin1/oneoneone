@@ -2,7 +2,7 @@
    DESIGN TOKENS
 
    oneoneone's own copy of its design tokens: color, type scale, radius,
-   focus ring. Previously synced from a shared design-system repo across
+   type. Previously synced from a shared design-system repo across
    linpaul.com/oneoneone/social-media-sandbox; that repo is gone, so this
    file is now local and can be edited directly.
 ============================================================================= */
@@ -10,13 +10,10 @@
 :root {
   /* --- The system is black on white ------------------------------------------
      Canvas + text are ONLY paper / ink / a neutral gray. No color in the
-     chrome. The paper↔ink pair is the only thing that flips in dark mode. */
+     chrome. */
   --color-paper: #ffffff;
   --color-ink: #000000;
   --color-ink-soft: #6f6f6f; /* secondary text — neutral gray, not a hue */
-  --color-near-black: #171717;
-  --color-rule: rgba(0, 0, 0, 0.14); /* hairlines, borders */
-  --color-wash: rgba(0, 0, 0, 0.05); /* faint hover / selected fill */
   --scrollbar-thumb: rgba(0, 0, 0, 0.28);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.5);
 
@@ -24,8 +21,7 @@
      Five. Used sparingly, and only on SMALL marks — category badges, status
      dots, a rule under a title, links, error text, an identifying avatar.
      NEVER on structural chrome (masthead, footer, page frame, primary
-     buttons): those are black on white, no exceptions. Fixed identity — they
-     do not flip in dark mode. */
+     buttons): those are black on white, no exceptions. */
   --color-navy: #25408f; /* rgb(37 64 143)  */
   --color-red: #d3222a; /* rgb(211 34 42)  */
   --color-cyan: #00aeed; /* rgb(0 174 237)  */
@@ -40,50 +36,19 @@
 
   /* --- Non-color primitives ------------------------------------------------ */
   --radius: 0; /* square, family-wide — no boxes, no chips */
-  --radius-pill: 999px; /* reserved for literal circles (a dot, an avatar) —
-                            nothing is pill-shaped chrome anymore */
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Light Helvetica — like the original linpaul.com, and about as close to
      "Neue Helvetica World 45 Light" as you get without licensing it. On macOS
      this renders Helvetica Neue Light; Windows has no Helvetica Neue and falls
      back to Arial (regular). Nothing heavier anywhere — the type law. */
   --font-weight-body: 300;
-  --focus-ring: 2px solid var(--color-ink);
 
   /* Fluid type scale — originated in linpaul.com, now the shared reference for
-     any UI text sized off it (the masthead nav in particular: wordmark at
-     --step-1, nav pills at --step--1). Every clamp() interpolates between a
+     any UI text sized off it (the masthead: wordmark at --step-2, nav at
+     --step--1). Every clamp() interpolates between a
      ~360px phone and a ~1440px desktop, so nothing snaps at a breakpoint. */
   --step--1: clamp(0.78rem, 0.74rem + 0.18vw, 0.88rem);
-  --step-0: clamp(0.94rem, 0.90rem + 0.20vw, 1.05rem);
-  --step-1: clamp(1.08rem, 0.98rem + 0.45vw, 1.35rem);
   --step-2: clamp(1.40rem, 1.12rem + 1.20vw, 2.10rem);
-
-  /* Solid hover fill — used where a background wash is still wanted (not on
-     linpaul.com's own nav/tiles anymore, which use underline instead). */
-  --tile-hover: #f0f0f0;
-
-  /* The page canvas. Kept as its own token (rather than just --color-paper)
-     since it's the one thing a themed surface might ever override. */
-  --surface-base: var(--color-paper);
-}
-
-/* Dark mode: paper↔ink invert, chrome grays track. Accents do NOT change.
-   Opt in per project by putting `.dark` on <html> (oneoneone does; linpaul.com
-   and social-media-sandbox are light-only and simply never add the class). */
-.dark {
-  --color-paper: var(--color-near-black);
-  --color-ink: #f4f4f4;
-  --color-ink-soft: #9a9a9a;
-  --color-rule: rgba(255, 255, 255, 0.16);
-  --color-wash: rgba(255, 255, 255, 0.07);
-  --scrollbar-thumb: rgba(255, 255, 255, 0.3);
-  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
-  /* The five accents are fixed — but navy is too dark to read on the dark
-     canvas, so the link/mark accent (only) lightens. Still navy in character. */
-  --color-link: #6b8fd6;
-  --tile-hover: #2c2c2c;
 }
 
 /* -----------------------------------------------------------------------------

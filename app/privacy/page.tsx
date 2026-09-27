@@ -22,11 +22,8 @@ export default function PrivacyPage() {
             Privacy without an account
           </h2>
           <p className="mt-3">
-            You don&apos;t need an account to read oneoneone (see below). If you don&apos;t have
-            one, we don&apos;t store anything that identifies you. The only thing saved locally is
-            one entry in your browser&apos;s{" "}
-            <code className="font-sans text-sm">localStorage</code>, which caches today&apos;s
-            picks so a refresh doesn&apos;t re-fetch them. That entry never leaves your device. We
+            You don&apos;t need an account to read oneoneone. Without one, we don&apos;t store
+            anything that identifies you. We
             do use Vercel Analytics to see aggregate page-view counts, it doesn&apos;t use cookies
             or track you individually, and we don&apos;t run anything else: no ad trackers, no
             read-tracking, no other third-party scripts.
@@ -39,18 +36,9 @@ export default function PrivacyPage() {
             Privacy with an account
           </h2>
           <p className="mt-3">
-            Signing in with Google stores your name, email, and profile photo from Google, plus a
-            session cookie to keep you signed in. After that, we log which works you open while
-            signed in, and you can see that list on your{" "}
-            <Link
-              href="/account"
-              className="text-ink underline decoration-ink/20 underline-offset-4 transition-colors hover:decoration-ink"
-            >
-              account page
-            </Link>
-            . Nothing from before you signed up gets added retroactively. Beyond Google&apos;s
-            sign-in and the aggregate Vercel Analytics described above, we don&apos;t use any
-            other third-party tool. The data stays in our database, visible only to you.
+            Signing in with Google gives us your name, email, and profile photo, kept only in a
+            signed session cookie on your device so you stay signed in. We don&apos;t keep a copy
+            on our servers, and signing out clears it.
           </p>
         </section>
 

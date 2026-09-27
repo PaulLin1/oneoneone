@@ -1,0 +1,69 @@
+name: Daily content
+
+# Keeps data/works stocked 14 days ahead (scripts/stock.ts): each run finds
+# whatever poem/essay/story days are missing — normally the three for the
+# day two weeks out — and commits them with any new author portraits. The
+# push redeploys the site, which shows each work on its own date
+# (lib/works.ts), so readers never wait on this job.
+#
+# If a run fails, nothing breaks: the next run retries the same days, and the
+# site keeps two weeks of content. The job fails (and GitHub emails) when any
+# category drops under 7 days ahead, which leaves a week to fix it.
+#
+# Needs one repository secret: ANTHROPIC_API_KEY.
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, 06:17 UTC — any time works, the buffer covers it
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-content
+  cancel-in-progress: false
+
+jobs:
+  stock:
+    runs-on: ubuntu-latest
+    # A normal day is 3 works (~1 minute). The first run after a long gap can
+    # be ~45; stock.ts's --max-cost stops it from spending more than $2.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Stock works
+        id: stock
+        continue-on-error: true
+        run: npm run stock
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # Runs even when stock.ts reported a low buffer, so the works it did
+      # find aren't lost.
+      - name: Commit new works
+        run: |
+          git add data/works public/authors
+          if git diff --cached --quiet; then
+            echo "Nothing new."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Stock daily works"
+          git pull --rebase
+          git push
+
+      - name: Fail if the buffer is low
+        if: steps.stock.outcome == 'failure'
+        run: |
+          echo "::error::stock.ts reported a low buffer or failed — see the 'Stock works' step."
+          exit 1

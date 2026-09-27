@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-export function maskStyle(src: string): CSSProperties {
+function maskStyle(src: string): CSSProperties {
   return {
     maskImage: `url(${src})`,
     WebkitMaskImage: `url(${src})`,
@@ -14,17 +14,8 @@ export function maskStyle(src: string): CSSProperties {
 }
 
 /**
- * Renders the real portrait (a flat black-and-white PNG applied as a CSS
- * mask — see lib/authorPortraits.ts's authorSlug) when one exists, or a
- * generated initial-letter mark when it doesn't.
- *
- * The initial is a stopgap for the short window between an author being
- * promoted and a real portrait getting published — not an accepted end
- * state. The actual target is a real photo for every author, always (see
- * the portrait step in content-pipeline.yml, which keeps trying alternate
- * sources and a manual crop rather than accepting the first failed
- * attempt). Seeing an initial in normal use means an author is still
- * missing one, not that the design intends it.
+ * Renders the portrait (a flat black-and-white PNG applied as a CSS mask)
+ * when one exists, or a generated initial-letter mark when it doesn't.
  */
 export function AuthorMark({
   portraitUrl,

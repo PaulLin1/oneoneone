@@ -1,6 +1,4 @@
 export type WorkCategory = "poem" | "essay" | "story";
-export type WorkDifficulty = "easy" | "medium" | "challenging";
-export type WorkEra = "ancient" | "19th_century" | "early_20th_century" | "modern";
 
 export type Work = {
   id: string;
@@ -15,13 +13,7 @@ export type Work = {
   source_name: string;
   source_url: string;
   public_domain: boolean;
-  difficulty: WorkDifficulty;
   reading_minutes: number;
-  era: WorkEra | null;
-  region: string | null;
-  tags: string[];
-  is_active: boolean;
-  created_at: string;
 };
 
 /** The one shared daily puzzle — identical for every reader on a given date. */

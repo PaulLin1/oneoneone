@@ -7,18 +7,13 @@
   as linpaul.com/social-media-sandbox's own tokens.css, which used to be
   synced from a shared design-system repo. The system is black on white; the
   accents (navy/red/cyan/iris/yellow) are fixed identity and never touch the
-  chrome. oneoneone is light-only, same as the other two — tokens.css still
-  carries a `.dark` block, but nothing ever puts that class on <html>, so
-  it's inert.
+  chrome. oneoneone is light-only.
 */
 
 @theme inline {
   --color-paper: var(--color-paper);
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
-  --color-near-black: var(--color-near-black);
-  --color-rule: var(--color-rule);
-  --color-wash: var(--color-wash);
   --color-navy: var(--color-navy);
   --color-red: var(--color-red);
   --color-cyan: var(--color-cyan);

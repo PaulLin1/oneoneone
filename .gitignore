@@ -24,12 +24,10 @@
 .DS_Store
 *.pem
 
-# Author portraits live in R2 now (authors.portrait_url — see
-# db/migrations/0006_portrait_urls.sql), not as git-committed static
-# files. Everything under public/authors/ is local scratch space: _source/
-# is the raw fetch, _staging/ is the processed-but-unreviewed output —
-# neither is ever meant to be committed.
-public/authors/
+# scratch folders left by the old portrait pipeline (generated portraits
+# in public/authors/*.png are committed)
+public/authors/_source/
+public/authors/_staging/
 
 # debug
 npm-debug.log*
@@ -47,3 +45,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts/find-work.ts candidate-list cache
+/.cache/

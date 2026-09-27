@@ -1,150 +1,95 @@
-import { getDb } from "@/lib/db";
 import { globalDayNumber } from "@/lib/epoch";
-import { todayIso } from "@/lib/dateMath";
-import type { DailySelection, Work, WorkCategory } from "@/lib/types";
+import type { DailySelection, Work } from "@/lib/types";
+import { workOn } from "@/lib/works";
 
 /**
- * The daily-content core. There is no rotation and no fixed catalogue — the
- * automated pipeline pins three freshly-discovered works to each calendar
- * date in the `daily_picks` table (db/migrations/0010), and everything the
- * reader sees is just a read of that table:
- *   - the home page / /api/daily-selection → today's row set
- *   - the Archive → every past date's row set
- * A date with fewer than three active picks (pipeline hasn't run yet, or a
- * work was archived after the fact) reads as "not published" — null here,
- * skipped in the Archive.
+ * Today's three come from data/works (see lib/works.ts). If a category has
+ * nothing on or before the date — a fresh checkout with no data yet — the
+ * sample work below stands in, so a page never renders empty.
  */
 
-const CATEGORIES: WorkCategory[] = ["poem", "essay", "story"];
+const BASE = { author_portrait_url: null, public_domain: true } as const;
 
-export type ArchiveDay = {
-  day: number;
-  date: string;
-  works: { category: WorkCategory; title: string }[];
+const POEM: Work = {
+  ...BASE,
+  id: "sample-poem",
+  title: "“Hope” is the thing with feathers",
+  author: "Emily Dickinson",
+  author_note: null,
+  year: 1891,
+  category: "poem",
+  description: "Hope as a small bird that sings without words and never asks for anything in return.",
+  source_name: "Wikisource",
+  source_url: "https://en.wikisource.org/wiki/%22Hope%22_is_the_thing_with_feathers",
+  reading_minutes: 1,
+  text_content: `“Hope” is the thing with feathers –
+That perches in the soul –
+And sings the tune without the words –
+And never stops – at all –
+
+And sweetest – in the Gale – is heard –
+And sore must be the storm –
+That could abash the little Bird
+That kept so many warm –
+
+I’ve heard it in the chillest land –
+And on the strangest Sea –
+Yet – never – in Extremity,
+It asked a crumb – of me.`,
 };
 
-/** One (date, category) → work row, joined to the work's title. */
-export type DailyPickRow = { date: string; category: WorkCategory; title: string };
+const ESSAY: Work = {
+  ...BASE,
+  id: "sample-essay",
+  title: "Of Studies",
+  author: "Francis Bacon",
+  author_note: null,
+  year: 1625,
+  category: "essay",
+  description: "What reading is for, and how much of it to do — in one compressed page.",
+  source_name: "Project Gutenberg",
+  source_url: "https://www.gutenberg.org/ebooks/575",
+  reading_minutes: 3,
+  text_content: `Studies serve for delight, for ornament, and for ability. Their chief use for delight, is in privateness and retiring; for ornament, is in discourse; and for ability, is in the judgment, and disposition of business. For expert men can execute, and perhaps judge of particulars, one by one; but the general counsels, and the plots and marshalling of affairs, come best, from those that are learned.
 
-function groupByDate(rows: DailyPickRow[]): Map<string, DailyPickRow[]> {
-  const byDate = new Map<string, DailyPickRow[]>();
-  for (const row of rows) {
-    const list = byDate.get(row.date);
-    if (list) list.push(row);
-    else byDate.set(row.date, [row]);
-  }
-  return byDate;
-}
+To spend too much time in studies is sloth; to use them too much for ornament, is affectation; to make judgment wholly by their rules, is the humor of a scholar. They perfect nature, and are perfected by experience: for natural abilities are like natural plants, that need proyning, by study; and studies themselves, do give forth directions too much at large, except they be bounded in by experience.
 
-function isComplete(rows: DailyPickRow[]): boolean {
-  const present = new Set(rows.map((r) => r.category));
-  return CATEGORIES.every((c) => present.has(c));
-}
+Crafty men contemn studies, simple men admire them, and wise men use them; for they teach not their own use; but that is a wisdom without them, and above them, won by observation. Read not to contradict and confute; nor to believe and take for granted; nor to find talk and discourse; but to weigh and consider.
 
-/**
- * The three official works pinned to `date`, or null if that day isn't
- * fully published (pipeline hasn't run, or a pick was archived since).
- */
-export async function getDailySelection(date: string): Promise<DailySelection | null> {
-  const sql = getDb();
-  const rows = (await sql`
-    select f.*
-    from daily_picks dp
-    join works_feed f on f.id = dp.work_id
-    where dp.pick_date = ${date} and f.is_active = true
-  `) as unknown as Work[];
+Some books are to be tasted, others to be swallowed, and some few to be chewed and digested; that is, some books are to be read only in parts; others to be read, but not curiously; and some few to be read wholly, and with diligence and attention.
 
-  const byCategory = new Map(rows.map((w) => [w.category, w]));
-  if (CATEGORIES.some((c) => !byCategory.has(c))) return null;
+Reading maketh a full man; conference a ready man; and writing an exact man.`,
+};
 
+const STORY: Work = {
+  ...BASE,
+  id: "sample-story",
+  title: "The Artist",
+  author: "Oscar Wilde",
+  author_note: null,
+  year: 1894,
+  category: "story",
+  description: "A sculptor who can only think in bronze, and the one image he has to melt down to make another.",
+  source_name: "Wikisource",
+  source_url: "https://en.wikisource.org/wiki/Poems_in_Prose_(Wilde)/The_Artist",
+  reading_minutes: 2,
+  text_content: `One evening there came into his soul the desire to fashion an image of The Pleasure that abideth for a Moment. And he went forth into the world to look for bronze. For he could think only in bronze.
+
+But all the bronze of the whole world had disappeared, nor anywhere in the whole world was there any bronze to be found, save only the bronze of the image of The Sorrow that endureth for Ever.
+
+Now this image he had himself, and with his own hands, fashioned, and had set it on the tomb of the one thing he had loved in life. On the tomb of the dead thing he had most loved had he set this image of his own fashioning, that it might serve as a sign of the love of man that dieth not, and a symbol of the sorrow of man that endureth for ever. And in the whole world there was no other bronze save the bronze of this image.
+
+And he took the image he had fashioned, and set it in a great furnace, and gave it to the fire.
+
+And out of the bronze of the image of The Sorrow that endureth for Ever he fashioned an image of The Pleasure that abideth for a Moment.`,
+};
+
+export function getDailySelection(date: string): DailySelection {
   return {
     day: globalDayNumber(date),
     date,
-    poem: byCategory.get("poem")!,
-    essay: byCategory.get("essay")!,
-    story: byCategory.get("story")!,
+    poem: workOn("poem", date) ?? POEM,
+    essay: workOn("essay", date) ?? ESSAY,
+    story: workOn("story", date) ?? STORY,
   };
-}
-
-/** Every pinned pick, oldest first — for the Archive and the sitemap. */
-export async function getPublishedPicks(): Promise<DailyPickRow[]> {
-  const sql = getDb();
-  return (await sql`
-    select to_char(dp.pick_date, 'YYYY-MM-DD') as date, f.category, f.title
-    from daily_picks dp
-    join works_feed f on f.id = dp.work_id
-    where f.is_active = true
-    order by dp.pick_date asc
-  `) as unknown as DailyPickRow[];
-}
-
-/**
- * Pure: given every pinned pick and "today", the list of complete days
- * strictly before today, ascending by day number. A day with a missing
- * category (or dated today / in the future / before the epoch) is skipped
- * — the Archive only shows fully-published back issues.
- */
-export function buildArchiveDays(picks: DailyPickRow[], today: string = todayIso()): ArchiveDay[] {
-  const currentDay = globalDayNumber(today);
-  const days: ArchiveDay[] = [];
-
-  for (const [date, rows] of groupByDate(picks)) {
-    const day = globalDayNumber(date);
-    if (day < 1 || day >= currentDay) continue;
-    if (!isComplete(rows)) continue;
-    days.push({
-      day,
-      date,
-      works: CATEGORIES.map((category) => ({
-        category,
-        title: rows.find((r) => r.category === category)!.title,
-      })),
-    });
-  }
-
-  return days.sort((a, b) => a.day - b.day);
-}
-
-export type PicksLogDay = {
-  date: string;
-  day: number;
-  complete: boolean;
-  works: { category: WorkCategory; title: string }[];
-};
-
-/**
- * Newest-first, most-recent `limit` days including today and any incomplete
- * days — the admin-facing "what the pipeline has published" view on /account.
- */
-export async function getDailyPicksLog(limit = 14): Promise<PicksLogDay[]> {
-  const picks = await getPublishedPicks();
-  const byDate = groupByDate(picks);
-
-  return [...byDate.entries()]
-    .sort(([a], [b]) => (a < b ? 1 : -1))
-    .slice(0, limit)
-    .map(([date, rows]) => ({
-      date,
-      day: globalDayNumber(date),
-      complete: isComplete(rows),
-      works: CATEGORIES.filter((c) => rows.some((r) => r.category === c)).map((category) => ({
-        category,
-        title: rows.find((r) => r.category === category)!.title,
-      })),
-    }));
-}
-
-/** Pin (or re-pin) one category's official work for a date. */
-export async function recordDailyPick(
-  date: string,
-  category: WorkCategory,
-  workId: string
-): Promise<void> {
-  const sql = getDb();
-  await sql`
-    insert into daily_picks (pick_date, category, work_id)
-    values (${date}, ${category}, ${workId})
-    on conflict (pick_date, category)
-    do update set work_id = excluded.work_id, created_at = now()
-  `;
 }

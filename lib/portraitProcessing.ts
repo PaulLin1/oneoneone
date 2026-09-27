@@ -2,14 +2,8 @@ import sharp from "sharp";
 import { detectFace } from "@/lib/portrait/faceDetect";
 
 /**
- * The actual crop + threshold + speck-cleanup algorithm — extracted from
- * scripts/process-author-portraits.ts so app/api/admin/upload-portrait can
- * run it too, on a buffer straight from a browser upload rather than a
- * file staged on disk. This is the whole reason the port was tractable:
- * sharp's pipeline is buffer-in/buffer-out internally already (raw() /
- * toBuffer() throughout) — only the very first read and the final write in
- * the original script touched the filesystem, and both have a direct
- * buffer equivalent (sharp(buffer) / .toBuffer() instead of .toFile()).
+ * Turns an author photo into the flat stencil the site draws (AuthorMark
+ * applies it as a CSS mask): a square PNG, black ink on transparent.
  *
  * Two things decide whether an auto-fetched portrait comes out usable:
  *
@@ -24,10 +18,8 @@ import { detectFace } from "@/lib/portrait/faceDetect";
  *    A fixed cutoff turned dark oil paintings and low-key photos into a
  *    near-solid blob and blew out bright engravings.
  *
- * processScored also returns a legibility score and whether a face was
- * found, so scripts/process-author-portraits.ts and
- * scripts/ensure-author-portrait.ts can pick the best of several
- * downloaded candidates — and reject a whole batch — on their own.
+ * It also returns a legibility score and whether a face was found, so
+ * scripts/find-work.ts can pick the best of several photos, or reject them all.
  */
 
 const SIZE = 900;
@@ -348,9 +340,4 @@ export async function processPortraitScored(source: Buffer): Promise<ScoredPortr
     .toBuffer();
 
   return { png, score: legibilityScore(alpha, SIZE), faceFound: face !== null };
-}
-
-/** Buffer in (any format sharp reads), PNG buffer out — same stencil format AuthorMark's mask-image expects. */
-export async function processPortraitBuffer(source: Buffer): Promise<Buffer> {
-  return (await processPortraitScored(source)).png;
 }
