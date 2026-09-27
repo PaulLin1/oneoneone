@@ -322,17 +322,27 @@ function discover(category: WorkCategory, schedule: Schedule): () => Promise<Fou
     });
   }
 
-  // Every source is listed once and shuffled, so every page is reachable and
-  // none is tried twice in a run.
+  // Every source is listed once, so every page is reachable and none is tried
+  // twice in a run. The order rotates between books (one piece per book per
+  // round) rather than a plain shuffle: Montaigne's 114 essays would otherwise
+  // crowd the queue, and while he's on a nearby day every one of them is a
+  // wasted try.
   let titles: string[] | null = null;
   return oneAtATime(async () => {
     if (!titles) {
       const saved = new Set(schedule.works.map((w) => w.source_url));
-      titles = shuffle(
-        (await listWikisourceCandidates(category))
-          .filter((p) => p.length <= MAX_WIKITEXT_BYTES && !saved.has(wikisourceUrl(p.title)))
-          .map((p) => p.title)
-      );
+      const books = new Map<string, string[]>();
+      for (const p of await listWikisourceCandidates(category)) {
+        if (p.length > MAX_WIKITEXT_BYTES || saved.has(wikisourceUrl(p.title))) continue;
+        const book = p.title.split("/")[0];
+        books.set(book, [...(books.get(book) ?? []), p.title]);
+      }
+      const queues = shuffle([...books.values()].map(shuffle));
+      titles = [];
+      for (let round = 0; queues.some((q) => q.length > round); round++) {
+        for (const q of queues) if (q[round]) titles.push(q[round]);
+      }
+      titles.reverse(); // popped from the end
     }
     const title = titles.pop();
     return title ? { title } : null;

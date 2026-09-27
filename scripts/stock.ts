@@ -2,7 +2,9 @@
  * Keeps every category filled AHEAD_DAYS days ahead — the one command the
  * daily job runs.
  *
- *   npm run stock -- [--days=14] [--max-cost=2]
+ *   npm run stock -- [--days=14] [--max-cost=2] [--from=YYYY-MM-DD]
+ *
+ * --from starts earlier than today, to backfill past days (the archive).
  *
  * For each day from today to today+days that's missing a poem, essay or
  * story, it runs scripts/find-work.ts for that day (one child process per
@@ -56,25 +58,27 @@ function parseArgs() {
   );
   const days = Number(args.days ?? AHEAD_DAYS);
   const maxCost = Number(args["max-cost"] ?? MAX_COST_USD);
-  if (!(days >= 0) || !(maxCost >= 0)) {
-    log("usage: npm run stock -- [--days=14] [--max-cost=2]");
+  const from = args.from ?? todayIso();
+  const validFrom = /^\d{4}-\d{2}-\d{2}$/.test(from) && addDays(from, 0) === from && from <= todayIso();
+  if (!(days >= 0) || !(maxCost >= 0) || !validFrom) {
+    log("usage: npm run stock -- [--days=14] [--max-cost=2] [--from=YYYY-MM-DD, not after today]");
     process.exit(1);
   }
-  return { days, maxCost };
+  return { days, maxCost, from };
 }
 
 function main() {
-  const { days, maxCost } = parseArgs();
+  const { days, maxCost, from } = parseArgs();
   const today = todayIso();
+  const last = addDays(today, days);
 
   const todo: { category: WorkCategory; date: string }[] = [];
-  for (let d = 0; d <= days; d++) {
-    const date = addDays(today, d);
+  for (let date = from; date <= last; date = addDays(date, 1)) {
     for (const category of CATEGORIES) {
       if (!scheduledDates(category).includes(date)) todo.push({ category, date });
     }
   }
-  log(`Stocking ${today} → ${addDays(today, days)}: ${todo.length} work${todo.length === 1 ? "" : "s"} to find.`);
+  log(`Stocking ${from} → ${last}: ${todo.length} work${todo.length === 1 ? "" : "s"} to find.`);
 
   let spent = 0;
   const failed = new Set<WorkCategory>();

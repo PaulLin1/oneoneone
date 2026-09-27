@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/": ["./data/works/**/*.json"],
     "/read/*": ["./data/works/**/*.json"],
+    "/archive": ["./data/works/**/*.json"],
+    "/archive/*/*": ["./data/works/**/*.json"],
   },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];

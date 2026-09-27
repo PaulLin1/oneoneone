@@ -1,6 +1,6 @@
-import { globalDayNumber } from "@/lib/epoch";
+import { dateForDay, globalDayNumber } from "@/lib/epoch";
 import type { DailySelection, Work } from "@/lib/types";
-import { workOn } from "@/lib/works";
+import { CATEGORIES, readWork, workOn, type ScheduledWork } from "@/lib/works";
 
 /**
  * Today's three come from data/works (see lib/works.ts). If a category has
@@ -92,4 +92,23 @@ export function getDailySelection(date: string): DailySelection {
     essay: workOn("essay", date) ?? ESSAY,
     story: workOn("story", date) ?? STORY,
   };
+}
+
+export type ArchiveDay = { day: number; date: string; works: ScheduledWork[] };
+
+/**
+ * Every past edition (day 1 up to yesterday), newest first, with the works
+ * saved for exactly that date. Today isn't archived yet, and a day with no
+ * saved works is left out rather than filled from a neighbour.
+ */
+export function getArchiveDays(today: string): ArchiveDay[] {
+  const days: ArchiveDay[] = [];
+  for (let day = globalDayNumber(today) - 1; day >= 1; day--) {
+    const date = dateForDay(day);
+    const works = CATEGORIES.map((category) => readWork(category, date)).filter(
+      (work): work is ScheduledWork => work !== null
+    );
+    if (works.length) days.push({ day, date, works });
+  }
+  return days;
 }
